@@ -15,7 +15,7 @@ export function validateTrade(
 
   // Define valid trading time range
   const startTime = parse("05:50", "HH:mm", new Date());
-  const endTime = parse("10:30", "HH:mm", new Date());
+  const endTime = parse("20:30", "HH:mm", new Date());
   const timeToCheck = parse(timeString, "HH:mm", new Date());
 
   // Check if current time is between 9:50 and 10:30
