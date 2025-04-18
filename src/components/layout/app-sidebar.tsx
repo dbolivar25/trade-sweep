@@ -18,11 +18,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "../ui/separator";
 import {
   SignInButton,
-  SignOutButton,
   SignUpButton,
   SignedIn,
   SignedOut,
