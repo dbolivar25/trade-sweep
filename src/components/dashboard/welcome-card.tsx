@@ -7,7 +7,7 @@ import { Skeleton } from "../ui/skeleton";
 type WelcomeCardProps = {
   isLoaded: boolean;
   isSignedIn: boolean;
-  user: any;
+  user: unknown;
 };
 
 export default function WelcomeCard({

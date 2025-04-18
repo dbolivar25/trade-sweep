@@ -14,7 +14,7 @@ import { mockWatchlistItems } from "@/lib/data/mock-data";
 type WatchlistCardProps = {
   isLoaded: boolean;
   isSignedIn: boolean | null | undefined;
-  user: any;
+  user: unknown;
 };
 
 export default function WatchlistCard({

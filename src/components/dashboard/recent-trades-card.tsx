@@ -16,7 +16,7 @@ import { useState } from "react";
 type RecentTradesCardProps = {
   isLoaded: boolean;
   isSignedIn: boolean | null | undefined;
-  user: any;
+  user: unknown;
 };
 
 export default function RecentTradesCard({
