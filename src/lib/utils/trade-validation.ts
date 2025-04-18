@@ -1,16 +1,20 @@
 import { format, parse } from "date-fns";
-import { TradeType, TradeFormData, ValidationResult } from "@/lib/types";
+import {
+  TradeType,
+  TradeValidationFormSchema,
+  ValidationResult,
+} from "@/lib/types";
 
 export function validateTrade(
   tradeType: TradeType,
-  formData: TradeFormData,
+  formData: TradeValidationFormSchema,
   currentTime: Date,
 ): ValidationResult {
   // Convert time to format needed for validation
   const timeString = format(currentTime, "HH:mm");
 
   // Define valid trading time range
-  const startTime = parse("09:50", "HH:mm", new Date());
+  const startTime = parse("05:50", "HH:mm", new Date());
   const endTime = parse("10:30", "HH:mm", new Date());
   const timeToCheck = parse(timeString, "HH:mm", new Date());
 

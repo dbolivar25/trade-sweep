@@ -22,7 +22,6 @@ type RecentTradesCardProps = {
 export default function RecentTradesCard({
   isLoaded,
   isSignedIn,
-  user,
 }: RecentTradesCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 

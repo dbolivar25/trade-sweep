@@ -20,7 +20,6 @@ type WatchlistCardProps = {
 export default function WatchlistCard({
   isLoaded,
   isSignedIn,
-  user,
 }: WatchlistCardProps) {
   if (!isLoaded) {
     return (

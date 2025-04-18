@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { validateTrade } from "@/lib/utils/trade-validation";
-import { TradeType, TradeFormData } from "@/lib/types";
+import {
+  TradeType,
+  tradeValidationFormSchema,
+  TradeValidationFormSchema,
+} from "@/lib/types";
 import { toast } from "sonner";
 import { useTimeProvider } from "@/lib/hooks/use-time-provider";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 
 interface TradeValidationFormProps {
   tradeType: TradeType;
@@ -18,27 +29,23 @@ export default function TradeValidationForm({
   tradeType,
   onComplete,
 }: TradeValidationFormProps) {
-  const initialFormData: TradeFormData = {
-    buySideLiquidity: "",
-    sellSideLiquidity: "",
-    fvgHigh: "",
-    fvgLow: "",
-    recentLimit: "",
-    currentPrice: "",
-  };
-
   const { currentTime } = useTimeProvider();
-  const [formData, setFormData] = useState<TradeFormData>(initialFormData);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-  };
+  const form = useForm<TradeValidationFormSchema>({
+    resolver: zodResolver(tradeValidationFormSchema),
+    defaultValues: {
+      buySideLiquidity: "",
+      sellSideLiquidity: "",
+      fvgHigh: "",
+      fvgLow: "",
+      recentLimit: "",
+      currentPrice: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const result = validateTrade(tradeType, formData, currentTime);
+  // Handle form submission
+  function onSubmit(data: TradeValidationFormSchema) {
+    const result = validateTrade(tradeType, data, currentTime);
 
     toast(
       `${result.isValid ? "Trade Validated" : "Validation Failed"}: ${result.message}`,
@@ -52,93 +59,101 @@ export default function TradeValidationForm({
     if (result.isValid) {
       onComplete();
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {tradeType === "long" ? (
-        <div className="space-y-2">
-          <Label htmlFor="buySideLiquidity">Buy Side Liquidity</Label>
-          <Input
-            id="buySideLiquidity"
-            type="number"
-            step="0.01"
-            value={formData.buySideLiquidity}
-            onChange={handleChange}
-            required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {tradeType === "long" ? (
+          <FormField
+            control={form.control}
+            name="buySideLiquidity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Buy Side Liquidity</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" {...field} />
+                </FormControl>
+              </FormItem>
+            )}
           />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Label htmlFor="sellSideLiquidity">Sell Side Liquidity</Label>
-          <Input
-            id="sellSideLiquidity"
-            type="number"
-            step="0.01"
-            value={formData.sellSideLiquidity}
-            onChange={handleChange}
-            required
+        ) : (
+          <FormField
+            control={form.control}
+            name="sellSideLiquidity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sell Side Liquidity</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" {...field} />
+                </FormControl>
+              </FormItem>
+            )}
           />
-        </div>
-      )}
+        )}
 
-      <div className="space-y-2">
-        <Label htmlFor="fvgHigh">
-          {tradeType === "long" ? "Bearish" : "Bullish"} FVG High
-        </Label>
-        <Input
-          id="fvgHigh"
-          type="number"
-          step="0.01"
-          value={formData.fvgHigh}
-          onChange={handleChange}
-          required
+        <FormField
+          control={form.control}
+          name="fvgHigh"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {tradeType === "long" ? "Bearish" : "Bullish"} FVG High
+              </FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="fvgLow">
-          {tradeType === "long" ? "Bearish" : "Bullish"} FVG Low
-        </Label>
-        <Input
-          id="fvgLow"
-          type="number"
-          step="0.01"
-          value={formData.fvgLow}
-          onChange={handleChange}
-          required
+        <FormField
+          control={form.control}
+          name="fvgLow"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {tradeType === "long" ? "Bearish" : "Bullish"} FVG Low
+              </FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="recentLimit">
-          {tradeType === "long" ? "Recent High" : "Short Recent Low"}
-        </Label>
-        <Input
-          id="recentLimit"
-          type="number"
-          step="0.01"
-          value={formData.recentLimit}
-          onChange={handleChange}
-          required
+        <FormField
+          control={form.control}
+          name="recentLimit"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {tradeType === "long" ? "Recent High" : "Recent Low"}
+              </FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="currentPrice">Current Close Price</Label>
-        <Input
-          id="currentPrice"
-          type="number"
-          step="0.01"
-          value={formData.currentPrice}
-          onChange={handleChange}
-          required
+        <FormField
+          control={form.control}
+          name="currentPrice"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Close Price</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+            </FormItem>
+          )}
         />
-      </div>
 
-      <Button type="submit" className="w-full">
-        Validate Entry
-      </Button>
-    </form>
+        <Button type="submit" className="w-full">
+          Validate Entry
+        </Button>
+      </form>
+    </Form>
   );
 }

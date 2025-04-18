@@ -1,13 +1,19 @@
+import { z } from "zod";
+
 export type TradeType = "long" | "short";
 
-export interface TradeFormData {
-  buySideLiquidity: string;
-  sellSideLiquidity: string;
-  fvgHigh: string;
-  fvgLow: string;
-  recentLimit: string;
-  currentPrice: string;
-}
+export const tradeValidationFormSchema = z.object({
+  buySideLiquidity: z.string().optional(),
+  sellSideLiquidity: z.string().optional(),
+  fvgHigh: z.string().min(1, { message: "FVG High is required" }),
+  fvgLow: z.string().min(1, { message: "FVG Low is required" }),
+  recentLimit: z.string().min(1, { message: "Recent limit is required" }),
+  currentPrice: z.string().min(1, { message: "Current price is required" }),
+});
+
+export type TradeValidationFormSchema = z.infer<
+  typeof tradeValidationFormSchema
+>;
 
 export interface ValidationResult {
   isValid: boolean;
