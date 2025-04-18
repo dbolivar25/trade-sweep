@@ -11,11 +11,13 @@ import TradeValidationForm from "@/components/trades/trade-validation-form";
 interface TradeValidationModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onComplete: () => void;
 }
 
 export default function TradeValidationModal({
   isOpen,
   onOpenChange,
+  onComplete,
 }: TradeValidationModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -34,17 +36,11 @@ export default function TradeValidationModal({
           </TabsList>
 
           <TabsContent value="long" className="pt-4">
-            <TradeValidationForm
-              tradeType="long"
-              onComplete={() => onOpenChange(false)}
-            />
+            <TradeValidationForm tradeType="long" onComplete={onComplete} />
           </TabsContent>
 
           <TabsContent value="short" className="pt-4">
-            <TradeValidationForm
-              tradeType="short"
-              onComplete={() => onOpenChange(false)}
-            />
+            <TradeValidationForm tradeType="short" onComplete={onComplete} />
           </TabsContent>
         </Tabs>
       </DialogContent>
