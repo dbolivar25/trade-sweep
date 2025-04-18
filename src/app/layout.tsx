@@ -8,6 +8,7 @@ import { CommandMenu } from "@/components/layout/command-bar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { ClerkProvider } from "@clerk/nextjs";
+import ReactQueryProvider from "@/components/providers/react-query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,18 +65,20 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <SidebarProvider>
-              <AppSidebar />
-              <div className="flex-1 w-full">
-                <div className="sticky top-0 z-10 p-4 bg-white dark:bg-stone-950 flex items-center justify-between">
-                  <SidebarTrigger className="mt-2" />
-                  <ThemeToggle />
+            <ReactQueryProvider>
+              <SidebarProvider>
+                <AppSidebar />
+                <div className="flex-1 w-full">
+                  <div className="sticky top-0 z-10 p-4 bg-white dark:bg-stone-950 flex items-center justify-between">
+                    <SidebarTrigger className="mt-2" />
+                    <ThemeToggle />
+                  </div>
+                  <div className="w-full">{children}</div>
+                  <CommandMenu />
+                  <Toaster />
                 </div>
-                <div className="w-full">{children}</div>
-                <CommandMenu />
-                <Toaster />
-              </div>
-            </SidebarProvider>
+              </SidebarProvider>
+            </ReactQueryProvider>
           </ThemeProvider>
         </body>
       </html>
