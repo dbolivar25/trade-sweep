@@ -1,5 +1,12 @@
 import React from "react";
-import { Home, BarChart3, List, Settings } from "lucide-react";
+import {
+  Home,
+  BarChart3,
+  List,
+  Settings,
+  User2,
+  ChevronUp,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +20,20 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "../ui/separator";
+import {
+  SignInButton,
+  SignOutButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 const navItems = [
   { name: "Home", icon: Home, href: "/", active: false },
@@ -56,13 +77,40 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Avatar className="h-8 w-8 mr-2">
-                <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <span>Username</span>
-            </SidebarMenuButton>
+            <SignedOut>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 className="mr-auto" />
+                    <ChevronUp />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="end">
+                  <DropdownMenuItem className="w-full" asChild>
+                    <SignInButton mode="modal" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="w-full" asChild>
+                    <SignUpButton mode="modal" />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SignedOut>
+            <SignedIn>
+              <SidebarMenuButton>
+                <User2 className="mr-auto" />
+                <UserButton
+                  appearance={{
+                    layout: {
+                      shimmer: false,
+                      animations: false,
+                    },
+                    elements: {
+                      userButtonAvatarBox: "max-w-[1.5rem] max-h-[1.5rem]",
+                    },
+                  }}
+                />
+              </SidebarMenuButton>
+            </SignedIn>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
