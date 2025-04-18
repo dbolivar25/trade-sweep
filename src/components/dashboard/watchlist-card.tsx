@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,9 +8,105 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { mockWatchlistItems } from "@/lib/data/mock-data";
 
-export default function WatchlistCard() {
+type WatchlistCardProps = {
+  isLoaded: boolean;
+  isSignedIn: boolean | null | undefined;
+  user: any;
+};
+
+export default function WatchlistCard({
+  isLoaded,
+  isSignedIn,
+  user,
+}: WatchlistCardProps) {
+  if (!isLoaded) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle>Watchlist</CardTitle>
+            <CardDescription>Your tracked symbols</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              View All
+            </Button>
+            <Button size="sm" disabled>
+              New +
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            {Array(9)
+              .fill(0)
+              .map((_, index) => (
+                <div
+                  key={index}
+                  className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg"
+                >
+                  <Skeleton className="h-5.5 w-16 rounded-md" />
+                  <Skeleton className="h-4 w-20 mt-1 rounded-md" />
+                  <Skeleton className="h-3.5 w-10 mt-1 rounded-md" />
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle>Watchlist</CardTitle>
+            <CardDescription>Your tracked symbols</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              View All
+            </Button>
+            <Button size="sm" disabled>
+              New +
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="relative">
+          {/* Blurred skeleton background */}
+          <div className="grid grid-cols-3 gap-4 filter blur-sm opacity-50">
+            {Array(9)
+              .fill(0)
+              .map((_, index) => (
+                <div
+                  key={index}
+                  className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg"
+                >
+                  <Skeleton className="h-5.5 w-16 rounded-md" />
+                  <Skeleton className="h-4 w-20 mt-1 rounded-md" />
+                  <Skeleton className="h-3.5 w-10 mt-1 rounded-md" />
+                </div>
+              ))}
+          </div>
+
+          {/* Sign in message overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <p className="text-stone-500 dark:text-stone-400 mb-2">
+              Sign in to view and manage your watchlist
+            </p>
+            <p className="text-stone-400 dark:text-stone-500 text-sm">
+              Track stock symbols and monitor price changes
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
