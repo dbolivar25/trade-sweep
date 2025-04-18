@@ -31,6 +31,20 @@ const fetchWatchList = async (): Promise<WatchlistItem[]> => {
 };
 
 export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
+  const {
+    isFetching,
+    isError,
+    data: watchlist,
+    // refetch,
+  } = useQuery(["watchlist"], fetchWatchList, {
+    // Only fetch if user is signed in
+    enabled: isSignedIn,
+    // Cache data for 5 minutes
+    staleTime: 5 * 60 * 1000,
+    // Retry 3 times if request fails
+    retry: 3,
+  });
+
   if (!isSignedIn) {
     return (
       <Card>
@@ -92,20 +106,6 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
       </Card>
     );
   }
-
-  const {
-    isFetching,
-    isError,
-    data: watchlist,
-    refetch,
-  } = useQuery(["watchlist"], fetchWatchList, {
-    // Only fetch if user is signed in
-    enabled: isSignedIn,
-    // Cache data for 5 minutes
-    staleTime: 5 * 60 * 1000,
-    // Retry 3 times if request fails
-    retry: 3,
-  });
 
   if (isFetching) {
     return (

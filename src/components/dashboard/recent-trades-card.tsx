@@ -35,6 +35,26 @@ const fetchTrades = async (): Promise<Trade[]> => {
 export default function RecentTradesCard({
   isSignedIn,
 }: RecentTradesCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    isFetching,
+    isError,
+    data: trades,
+    refetch,
+  } = useQuery(["recentTrades"], fetchTrades, {
+    // Only fetch if user is signed in
+    enabled: isSignedIn,
+    // Cache data for 5 minutes
+    staleTime: 5 * 60 * 1000,
+    // Retry 3 times if request fails
+    retry: 3,
+  });
+
+  const onTradeValidationSuccess = () => {
+    setIsModalOpen(false);
+    refetch();
+  };
+
   if (!isSignedIn) {
     return (
       <Card className="h-full flex flex-col">
@@ -116,26 +136,6 @@ export default function RecentTradesCard({
       </Card>
     );
   }
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const {
-    isFetching,
-    isError,
-    data: trades,
-    refetch,
-  } = useQuery(["recentTrades"], fetchTrades, {
-    // Only fetch if user is signed in
-    enabled: isSignedIn,
-    // Cache data for 5 minutes
-    staleTime: 5 * 60 * 1000,
-    // Retry 3 times if request fails
-    retry: 3,
-  });
-
-  const onTradeValidationSuccess = () => {
-    setIsModalOpen(false);
-    refetch();
-  };
 
   if (isFetching) {
     return (
