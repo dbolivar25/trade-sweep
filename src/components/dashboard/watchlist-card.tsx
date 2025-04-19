@@ -18,16 +18,13 @@ type WatchlistCardProps = {
 };
 
 const fetchWatchList = async (): Promise<WatchlistItem[]> => {
-  // const response = await fetch("/api/watchlist");
-  //
-  // if (!response.ok) {
-  //   throw new Error("Failed to fetch trades");
-  // }
-  //
-  // return response.json();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const response = await fetch("/api/watchlist");
 
-  return mockWatchlistItems;
+  if (!response.ok) {
+    throw new Error("Failed to fetch trades");
+  }
+
+  return response.json();
 };
 
 export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
