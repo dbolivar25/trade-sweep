@@ -88,7 +88,10 @@ async function fetchStockData(ticker: string) {
   try {
     const today = new Date();
     const from = new Date();
+    today.setDate(today.getDate() - 1);
     from.setDate(today.getDate() - 1); // Get last day of data
+
+    console.log(`Fetching data for ${ticker} from ${from} to ${today}`);
 
     const fromStr = from.toISOString().split("T")[0];
     const toStr = today.toISOString().split("T")[0];
@@ -101,7 +104,12 @@ async function fetchStockData(ticker: string) {
       throw new Error(`API error: ${response.status}`);
     }
 
+    console.log(`Received data for ${ticker} from ${from} to ${today}.`);
+
     const data = await response.json();
+
+    console.log(`Received ${data.length} records for ${ticker}`);
+
     return data;
   } catch (error) {
     console.error(`Error fetching data for ${ticker}:`, error);
@@ -124,6 +132,8 @@ interface StockDataItem {
 
 async function storeInSupabase(stockData: StockDataItem[]) {
   if (!stockData || stockData.length === 0) return;
+
+  console.log(`Storing ${stockData.length} records in Supabase`);
 
   const formattedData = stockData.map((item) => ({
     symbol: item.symbol,
@@ -154,21 +164,43 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  console.log("Received request to fetch stock data");
+
   try {
     // Process tickers in batches to avoid overwhelming the API
     const batchSize = 5;
     for (let i = 0; i < uniqueTickers.length; i += batchSize) {
       const batch = uniqueTickers.slice(i, i + batchSize);
+
+      console.log(
+        `Processing batch ${i / batchSize + 1} of ${Math.ceil(
+          uniqueTickers.length / batchSize,
+        )}`,
+      );
+
       const promises = batch.map(fetchStockData);
       const results = await Promise.all(promises);
+
+      console.log(
+        `Processed batch ${i / batchSize + 1} of ${Math.ceil(
+          uniqueTickers.length / batchSize,
+        )}`,
+      );
 
       // Store each result in Supabase
       for (const data of results) {
         await storeInSupabase(data);
       }
 
+      console.log(
+        `Stored batch ${i / batchSize + 1} of ${Math.ceil(
+          uniqueTickers.length / batchSize,
+        )}`,
+      );
+
       // Add a small delay between batches to avoid rate limits
       if (i + batchSize < uniqueTickers.length) {
+        console.log("Waiting 0.1 seconds before next batch");
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }
