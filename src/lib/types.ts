@@ -36,3 +36,31 @@ export interface WatchlistItem {
   price: number;
   change: string;
 }
+
+export interface StockEODData {
+  id: number;
+  symbol: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  change: number;
+  change_percent: number;
+  vwap: number;
+  created_at: string;
+}
+
+export interface StockDataResponse {
+  symbol: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  change: number;
+  changePercent: number;
+  vwap: number;
+}
