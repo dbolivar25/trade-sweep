@@ -160,7 +160,7 @@ async function storeInSupabase(stockData: StockDataItem[]) {
 export async function GET(request: Request) {
   // Check for secret to confirm this is a valid request
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
