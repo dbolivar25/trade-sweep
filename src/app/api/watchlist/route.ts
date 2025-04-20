@@ -8,10 +8,9 @@ export async function GET() {
     const {} = await auth.protect();
 
     const { data, error } = await supabase
-      .from("stock_eod_data")
+      .from("latest_stock_eod_data")
       .select("id, symbol, close, change_percent")
-      .order("created_at", { ascending: false })
-      .limit(12);
+      .order("symbol", { ascending: false });
 
     if (error) {
       console.error("Supabase error:", error);

@@ -219,7 +219,7 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-3 gap-4">
-          {watchlist.slice(0, 9).map((item) => (
+          {watchlist.slice(0, 15).map((item) => (
             <div
               key={item.id}
               className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
