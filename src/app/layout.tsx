@@ -6,7 +6,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { CommandMenu } from "@/components/layout/command-bar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { ClerkProvider } from "@clerk/nextjs";
 import ReactQueryProvider from "@/components/providers/react-query-provider";
 
