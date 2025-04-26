@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Home,
-  BarChart3,
-  List,
-  Settings,
-  User2,
-  ChevronUp,
-} from "lucide-react";
+import { Home, BarChart3, List, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,19 +12,9 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Separator } from "../ui/separator";
-import {
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ThemeToggle } from "./theme-toggle";
+import { AuthToggle } from "./auth-toggle";
 
 const navItems = [
   { name: "Home", icon: Home, href: "/", active: false },
@@ -75,27 +58,9 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SignedOut>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
-                    <User2 className="mr-auto" />
-                    <ChevronUp />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" align="end">
-                  <DropdownMenuItem className="w-full" asChild>
-                    <SignInButton mode="modal" />
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="w-full" asChild>
-                    <SignUpButton mode="modal" />
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SignedOut>
-            <SignedIn>
-              <SidebarMenuButton>
-                <User2 className="mr-auto" />
+            <div className="flex justify-between">
+              <ThemeToggle />
+              <SignedIn>
                 <UserButton
                   appearance={{
                     layout: {
@@ -107,8 +72,11 @@ export function AppSidebar() {
                     },
                   }}
                 />
-              </SidebarMenuButton>
-            </SignedIn>
+              </SignedIn>
+              <SignedOut>
+                <AuthToggle />
+              </SignedOut>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

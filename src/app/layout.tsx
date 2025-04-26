@@ -69,9 +69,8 @@ export default function RootLayout({
               <SidebarProvider>
                 <AppSidebar />
                 <div className="flex-1 w-full">
-                  <div className="sticky top-0 z-10 p-4 bg-white dark:bg-stone-950 flex items-center justify-between">
+                  <div className="sticky top-0 z-10 p-4 flex items-center justify-between">
                     <SidebarTrigger className="mt-2" />
-                    <ThemeToggle />
                   </div>
                   <div className="w-full">{children}</div>
                   <CommandMenu />
