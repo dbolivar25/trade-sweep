@@ -13,7 +13,7 @@ export default async function Home() {
         {/* Left Column - Welcome Card and Watchlist */}
         <div className="space-y-6 w-full">
           <WelcomeCard userFirstName={user?.firstName} />
-          <WatchlistCard isSignedIn={isSignedIn} />
+          <WatchlistCard isSignedIn={isSignedIn} userId={user?.id} />
         </div>
         {/* Right Column - Recent Trades */}
         <div className="w-full">

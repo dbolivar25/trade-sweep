@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,19 +22,25 @@ type TickerVisibility = {
 
 type WatchlistCardProps = {
   isSignedIn: boolean;
+  userId?: string; // Optional user ID for storage
 };
 
-// Storage key for localStorage
-const TICKER_VISIBILITY_STORAGE_KEY = "watchlist-ticker-visibility";
+// Function to get storage key for a specific user
+function getStorageKey(userId?: string): string {
+  return userId
+    ? `watchlist-ticker-visibility-${userId}`
+    : "watchlist-ticker-visibility-default";
+}
 
 // Function to save visibility state to localStorage
-function saveVisibilityToStorage(visibilityState: TickerVisibility): void {
+function saveVisibilityToStorage(
+  visibilityState: TickerVisibility,
+  userId?: string,
+): void {
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem(
-        TICKER_VISIBILITY_STORAGE_KEY,
-        JSON.stringify(visibilityState),
-      );
+      const key = getStorageKey(userId);
+      localStorage.setItem(key, JSON.stringify(visibilityState));
     } catch (error) {
       console.error("Failed to save ticker visibility to localStorage:", error);
     }
@@ -42,10 +48,11 @@ function saveVisibilityToStorage(visibilityState: TickerVisibility): void {
 }
 
 // Function to load visibility state from localStorage
-function loadVisibilityFromStorage(): TickerVisibility | null {
+function loadVisibilityFromStorage(userId?: string): TickerVisibility | null {
   if (typeof window !== "undefined") {
     try {
-      const saved = localStorage.getItem(TICKER_VISIBILITY_STORAGE_KEY);
+      const key = getStorageKey(userId);
+      const saved = localStorage.getItem(key);
       if (saved) {
         return JSON.parse(saved);
       }
@@ -71,9 +78,12 @@ const fetchWatchList = async (): Promise<WatchlistItem[]> => {
 };
 
 // Function to initialize visibility state, using stored values if available
-function initializeVisibility(items: WatchlistItem[]): TickerVisibility {
+function initializeVisibility(
+  items: WatchlistItem[],
+  userId?: string,
+): TickerVisibility {
   // Try to load from localStorage first
-  const storedVisibility = loadVisibilityFromStorage();
+  const storedVisibility = loadVisibilityFromStorage(userId);
 
   // Create a fresh object with all tickers visible by default
   const defaultVisibility = items.reduce((acc, item) => {
@@ -101,7 +111,10 @@ function getVisibleTickers(
   return items.filter((item) => visibilityState[item.id]);
 }
 
-export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
+export default function WatchlistCard({
+  isSignedIn,
+  userId,
+}: WatchlistCardProps) {
   // State for tracking the visibility of tickers
   const [tickerVisibility, setTickerVisibility] = useState<TickerVisibility>(
     {},
@@ -110,24 +123,50 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Temporary state for when editing in the modal
   const [tempVisibility, setTempVisibility] = useState<TickerVisibility>({});
+  // Track the last userId we loaded for
+  const [lastLoadedUserId, setLastLoadedUserId] = useState<string | undefined>(
+    userId,
+  );
+  // Flag to indicate initial load needed
+  const [needsInitialization, setNeedsInitialization] = useState(true);
 
   const {
     isFetching,
     isError,
     data: watchlist,
-  } = useQuery(["watchlist"], fetchWatchList, {
+  } = useQuery(["watchlist", userId], fetchWatchList, {
     enabled: isSignedIn,
     staleTime: 5 * 60 * 1000,
     retry: 3,
-    onSuccess: (data) => {
-      // Initialize visibility state when data is first loaded
-      if (Object.keys(tickerVisibility).length === 0) {
-        const initialState = initializeVisibility(data);
-        setTickerVisibility(initialState);
-        setTempVisibility(initialState);
-      }
-    },
   });
+
+  // Effect for user sign-out - clears states
+  useEffect(() => {
+    if (!isSignedIn) {
+      setTickerVisibility({});
+      setTempVisibility({});
+      setNeedsInitialization(true);
+    }
+  }, [isSignedIn]);
+
+  // Effect for user change - sets the flag to initialize
+  useEffect(() => {
+    if (userId !== lastLoadedUserId) {
+      setNeedsInitialization(true);
+    }
+  }, [userId, lastLoadedUserId]);
+
+  // Effect for initialization - only runs when needed
+  useEffect(() => {
+    // Only initialize if we have data and need initialization
+    if (watchlist && isSignedIn && needsInitialization) {
+      const initialState = initializeVisibility(watchlist, userId);
+      setTickerVisibility(initialState);
+      setTempVisibility(initialState);
+      setLastLoadedUserId(userId);
+      setNeedsInitialization(false);
+    }
+  }, [watchlist, isSignedIn, needsInitialization, userId]);
 
   // Function to toggle a ticker's visibility in the modal
   function toggleTicker(id: string) {
@@ -141,7 +180,7 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
   function applyVisibilityChanges() {
     const newVisibility = { ...tempVisibility };
     setTickerVisibility(newVisibility);
-    saveVisibilityToStorage(newVisibility);
+    saveVisibilityToStorage(newVisibility, userId);
   }
 
   // Function to open modal
