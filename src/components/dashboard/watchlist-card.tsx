@@ -278,7 +278,8 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
               ))
             ) : (
               <div className="col-span-3 text-center py-4 text-stone-500">
-                No tickers selected. Click "Edit" to select tickers to display.
+                No tickers selected. Click &quot;Edit&quot; to select tickers to
+                display.
               </div>
             )}
           </div>
