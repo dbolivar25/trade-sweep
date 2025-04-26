@@ -24,6 +24,41 @@ type WatchlistCardProps = {
   isSignedIn: boolean;
 };
 
+// Storage key for localStorage
+const TICKER_VISIBILITY_STORAGE_KEY = "watchlist-ticker-visibility";
+
+// Function to save visibility state to localStorage
+function saveVisibilityToStorage(visibilityState: TickerVisibility): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(
+        TICKER_VISIBILITY_STORAGE_KEY,
+        JSON.stringify(visibilityState),
+      );
+    } catch (error) {
+      console.error("Failed to save ticker visibility to localStorage:", error);
+    }
+  }
+}
+
+// Function to load visibility state from localStorage
+function loadVisibilityFromStorage(): TickerVisibility | null {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem(TICKER_VISIBILITY_STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load ticker visibility from localStorage:",
+        error,
+      );
+    }
+  }
+  return null;
+}
+
 // Function to fetch watchlist data
 const fetchWatchList = async (): Promise<WatchlistItem[]> => {
   const response = await fetch("/api/watchlist");
@@ -35,12 +70,27 @@ const fetchWatchList = async (): Promise<WatchlistItem[]> => {
   return response.json();
 };
 
-// Function to initialize visibility state
+// Function to initialize visibility state, using stored values if available
 function initializeVisibility(items: WatchlistItem[]): TickerVisibility {
-  return items.reduce((acc, item) => {
+  // Try to load from localStorage first
+  const storedVisibility = loadVisibilityFromStorage();
+
+  // Create a fresh object with all tickers visible by default
+  const defaultVisibility = items.reduce((acc, item) => {
     acc[item.id] = false;
     return acc;
   }, {} as TickerVisibility);
+
+  // If we have stored values, merge them with defaults
+  // This ensures any new tickers that didn't exist in storage get default values
+  if (storedVisibility) {
+    return {
+      ...defaultVisibility,
+      ...storedVisibility,
+    };
+  }
+
+  return defaultVisibility;
 }
 
 // Function to filter visible tickers
@@ -87,9 +137,11 @@ export default function WatchlistCard({ isSignedIn }: WatchlistCardProps) {
     }));
   }
 
-  // Function to apply changes from modal
+  // Function to apply changes from modal and save to localStorage
   function applyVisibilityChanges() {
-    setTickerVisibility({ ...tempVisibility });
+    const newVisibility = { ...tempVisibility };
+    setTickerVisibility(newVisibility);
+    saveVisibilityToStorage(newVisibility);
   }
 
   // Function to open modal
