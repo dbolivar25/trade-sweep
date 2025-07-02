@@ -14,7 +14,7 @@ import TradeCompletionModal from "../trades/trade-completion-modal";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Trade } from "@/lib/types";
-import { Trash2 } from "lucide-react";
+import { Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 type RecentTradesCardProps = {
@@ -289,19 +289,16 @@ export default function RecentTradesCard({
             <div className="text-stone-500 dark:text-stone-400 mb-2">
               No trades yet
             </div>
-            <p className="text-stone-400 dark:text-stone-500 text-sm mb-4">
+            <p className="text-stone-400 dark:text-stone-500 text-sm">
               Start tracking your trades by clicking the &quot;New +&quot; button
             </p>
-            <Button size="sm" onClick={() => setIsModalOpen(true)}>
-              Create Your First Trade
-            </Button>
           </div>
         ) : (
         <div className="space-y-3">
           {trades.slice(0, 10).map((trade) => (
             <div
               key={trade.id}
-              className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
+              className="group flex items-center justify-between py-3 border-b border-stone-100 dark:border-stone-800 last:border-0 transition-colors hover:bg-stone-50/50 dark:hover:bg-stone-900/20 px-2 -mx-2 rounded"
             >
               <div>
                 <div className="flex items-center">
@@ -316,67 +313,60 @@ export default function RecentTradesCard({
               <div className="text-right">
                 {trade.status === "completed" ? (
                   <>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div
-                          className={`font-medium ${
-                            trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {trade.profit && trade.profit >= 0 ? "+" : ""}
-                          {trade.profit?.toFixed(2) || "0.00"}
-                        </div>
-                        <div className="text-xs text-stone-500">
-                          {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteClick(trade.id)}
-                        className={`h-7 w-7 p-0 ${
-                          deleteConfirmId === trade.id
-                            ? "text-red-600 hover:text-red-700"
-                            : "text-stone-500 hover:text-stone-700"
+                    <div>
+                      <div
+                        className={`font-medium ${
+                          trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
                         }`}
-                        title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                        {trade.profit && trade.profit >= 0 ? "+" : ""}
+                        {trade.profit?.toFixed(2) || "0.00"}
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleDeleteClick(trade.id)}
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 ${
+                        deleteConfirmId === trade.id
+                          ? "opacity-100 text-red-500 hover:text-red-600"
+                          : "text-stone-400 hover:text-stone-600"
+                      }`}
+                      title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <>
                     <div>
-                      <div className="font-medium text-stone-500">Pending</div>
+                      <div className="font-medium text-yellow-600">Pending</div>
                       <div className="text-xs text-stone-500">
                         Entry: {trade.entry_price.toFixed(2)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
                         onClick={() => handleCompleteClick(trade.id)}
-                        className="h-7 px-2 text-xs"
+                        className="p-1 rounded hover:bg-green-50 dark:hover:bg-green-950 text-green-600 hover:text-green-700"
+                        title="Complete trade"
                       >
-                        Complete
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteClick(trade.id)}
-                        className={`h-7 w-7 p-0 ${
+                        className={`p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 ${
                           deleteConfirmId === trade.id
-                            ? "text-red-600 hover:text-red-700"
-                            : "text-stone-500 hover:text-stone-700"
+                            ? "opacity-100 text-red-500 hover:text-red-600"
+                            : "text-stone-400 hover:text-stone-600"
                         }`}
                         title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>

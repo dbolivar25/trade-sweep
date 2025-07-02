@@ -185,11 +185,6 @@ export default function TradeValidationForm({
           {symbolError && (
             <p className="text-sm text-red-500 mt-1">{symbolError}</p>
           )}
-          {validSymbols.size > 0 && (
-            <p className="text-xs text-stone-500 mt-1">
-              Available: {Array.from(validSymbols).join(", ")}
-            </p>
-          )}
         </div>
         {tradeType === "long" ? (
           <FormField
