@@ -63,7 +63,8 @@ export default function WatchlistCard({
     data: watchlist,
   } = useQuery(["watchlist", userId], fetchWatchList, {
     enabled: isSignedIn,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000, // 1 hour (stock data only updates once per day)
+    cacheTime: 24 * 60 * 60 * 1000, // Keep in cache for 24 hours
     retry: 3,
   });
 
@@ -291,8 +292,8 @@ export default function WatchlistCard({
             <CardDescription>Your tracked symbols</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              View All
+            <Button variant="outline" size="sm" asChild>
+              <a href="/watchlist">View All</a>
             </Button>
             <Button 
               size="sm" 
