@@ -58,7 +58,7 @@ export default function WatchlistCard({
   const queryClient = useQueryClient();
 
   const {
-    isFetching,
+    isLoading,
     isError,
     data: watchlist,
   } = useQuery(["watchlist", userId], fetchWatchList, {
@@ -98,7 +98,8 @@ export default function WatchlistCard({
       console.error("Failed to update preferences:", err);
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure consistency
+      // Refetch in the background to ensure consistency
+      // The optimistic update stays visible during refetch
       queryClient.invalidateQueries(["watchlist"]);
     },
   });
@@ -191,7 +192,7 @@ export default function WatchlistCard({
     );
   }
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
