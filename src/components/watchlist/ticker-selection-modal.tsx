@@ -54,13 +54,13 @@ export default function TickerSelectionModal({
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {tickers.map((item) => (
               <div
-                key={item.id}
+                key={item.symbol}
                 className={`p-3 border rounded-lg transition-all cursor-pointer ${
-                  visibilityState[item.id]
+                  visibilityState[item.symbol]
                     ? "border-stone-300 dark:border-stone-700"
                     : "border-stone-200 dark:border-stone-800 opacity-60 dark:opacity-80"
                 }`}
-                onClick={() => onToggleTicker(item.id.toString())}
+                onClick={() => onToggleTicker(item.symbol)}
               >
                 <div className="font-medium">{item.symbol}</div>
                 <div className="text-sm">${item.price}</div>

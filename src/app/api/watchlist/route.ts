@@ -23,7 +23,7 @@ export async function GET() {
     const authSupabase = await createAuthenticatedSupabaseClient();
     const { data: preferences, error: prefError } = await authSupabase
       .from("user_watchlist_preferences")
-      .select("ticker_id, is_visible")
+      .select("symbol, is_visible")
       .eq("user_id", userId);
 
     if (prefError) {
@@ -31,20 +31,19 @@ export async function GET() {
       // Continue without preferences - all items will be hidden by default
     }
 
-    // Create a map of preferences for quick lookup
+    // Create a map of preferences for quick lookup by symbol
     const preferencesMap = new Map<string, boolean>();
     preferences?.forEach((pref) => {
-      preferencesMap.set(pref.ticker_id, pref.is_visible);
+      preferencesMap.set(pref.symbol, pref.is_visible);
     });
 
     // Format the data to match the WatchlistItem interface with visibility info
     const watchlistItems: WatchlistItem[] = stockData
       .map((item) => ({
-        id: item.id,
         symbol: item.symbol,
         price: parseFloat(item.close.toFixed(2)),
         change: formatChangePercent(item.change_percent),
-        isVisible: preferencesMap.get(item.id) ?? false, // Default to false if no preference
+        isVisible: preferencesMap.get(item.symbol) ?? false, // Look up by symbol
       }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
 

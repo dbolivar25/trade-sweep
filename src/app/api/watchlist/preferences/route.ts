@@ -10,7 +10,7 @@ export async function GET() {
     // Fetch user's watchlist preferences
     const { data, error } = await supabase
       .from("user_watchlist_preferences")
-      .select("ticker_id, is_visible")
+      .select("symbol, is_visible")
       .eq("user_id", userId);
 
     if (error) {
@@ -24,7 +24,7 @@ export async function GET() {
     // Convert to object format for easier client-side usage
     const preferences: Record<string, boolean> = {};
     data?.forEach((pref) => {
-      preferences[pref.ticker_id] = pref.is_visible;
+      preferences[pref.symbol] = pref.is_visible;
     });
 
     return NextResponse.json(preferences);
@@ -50,9 +50,9 @@ export async function POST(request: Request) {
     }
 
     // Convert preferences object to array format for bulk upsert
-    const upsertData = Object.entries(preferences).map(([ticker_id, is_visible]) => ({
+    const upsertData = Object.entries(preferences).map(([symbol, is_visible]) => ({
       user_id: userId,
-      ticker_id,
+      symbol,
       is_visible,
     }));
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     const { error } = await supabase
       .from("user_watchlist_preferences")
       .upsert(upsertData, {
-        onConflict: "user_id,ticker_id",
+        onConflict: "user_id,symbol",
       });
 
     if (error) {
@@ -84,9 +84,9 @@ export async function PUT(request: Request) {
     const supabase = await createAuthenticatedSupabaseClient();
     
     const body = await request.json();
-    const { ticker_id, is_visible } = body as { ticker_id: string; is_visible: boolean };
+    const { symbol, is_visible } = body as { symbol: string; is_visible: boolean };
 
-    if (!ticker_id || typeof is_visible !== "boolean") {
+    if (!symbol || typeof is_visible !== "boolean") {
       return NextResponse.json(
         { error: "Invalid request format" },
         { status: 400 }
@@ -99,11 +99,11 @@ export async function PUT(request: Request) {
       .upsert(
         {
           user_id: userId,
-          ticker_id,
+          symbol,
           is_visible,
         },
         {
-          onConflict: "user_id,ticker_id",
+          onConflict: "user_id,symbol",
         }
       );
 

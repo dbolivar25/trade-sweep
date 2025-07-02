@@ -92,7 +92,7 @@ export default function WatchlistCard({
       // Create preferences object with all tickers
       const allPreferences: Record<string, boolean> = {};
       watchlist.forEach(item => {
-        allPreferences[item.id] = tempVisibility[item.id] ?? false;
+        allPreferences[item.symbol] = tempVisibility[item.symbol] ?? false;
       });
       
       // Update preferences in Supabase
@@ -107,7 +107,7 @@ export default function WatchlistCard({
       // Initialize temp visibility with current state from watchlist
       const currentVisibility: Record<string, boolean> = {};
       watchlist.forEach(item => {
-        currentVisibility[item.id] = item.isVisible;
+        currentVisibility[item.symbol] = item.isVisible;
       });
       setTempVisibility(currentVisibility);
       setIsModalOpen(true);
@@ -136,7 +136,7 @@ export default function WatchlistCard({
           <div className="grid grid-cols-3 gap-4 filter blur-sm opacity-70">
             {mockWatchlistItems.slice(0, 9).map((item) => (
               <div
-                key={item.id}
+                key={item.symbol}
                 className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
               >
                 <div className="font-medium">{item.symbol}</div>
@@ -223,7 +223,7 @@ export default function WatchlistCard({
           <div className="grid grid-cols-3 gap-4 filter blur-sm opacity-70">
             {mockWatchlistItems.slice(0, 9).map((item) => (
               <div
-                key={item.id}
+                key={item.symbol}
                 className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
               >
                 <div className="font-medium">{item.symbol}</div>
@@ -276,7 +276,7 @@ export default function WatchlistCard({
             {visibleTickers.length > 0 ? (
               visibleTickers.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.symbol}
                   className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
                 >
                   <div className="font-medium">{item.symbol}</div>

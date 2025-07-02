@@ -60,7 +60,7 @@ This is a Next.js 15 project using the App Router pattern with the following key
 The application uses Supabase with tables including:
 - `stock_eod_data`: Historical end-of-day stock data
 - `latest_stock_eod_data`: Latest price information for watchlist items
-- `user_watchlist_preferences`: User-specific watchlist visibility preferences
+- `user_watchlist_preferences`: User-specific watchlist visibility preferences (uses symbol as identifier)
 
 ### Architecture Patterns
 
