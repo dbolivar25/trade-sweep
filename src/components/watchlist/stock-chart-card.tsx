@@ -93,7 +93,7 @@ export default function StockChartCard({
               dataKey="date"
               tickFormatter={(value) => format(new Date(value), "MMM d")}
               tick={({ x, y, payload, index }) => {
-                if (index === 0) return null; // Skip first label
+                if (index === 0) return <g />; // Skip first label
                 return (
                   <text x={x} y={y} dy={16} textAnchor="middle" fontSize={10} className="fill-muted-foreground">
                     {format(new Date(payload.value), "MMM d")}
@@ -117,7 +117,8 @@ export default function StockChartCard({
               content={
                 <ChartTooltipContent 
                   labelFormatter={(value) => format(new Date(value), "MMM d, yyyy")}
-                  formatter={(value: number, name: string, props: { payload: typeof chartData[0] }) => {
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: any, name: any, props: any) => {
                     const item = props.payload;
                     return (
                       <div className="text-xs space-y-1">
