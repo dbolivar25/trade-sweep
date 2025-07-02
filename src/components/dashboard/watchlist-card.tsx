@@ -67,14 +67,39 @@ export default function WatchlistCard({
     retry: 3,
   });
 
-  // Mutation for updating preferences
+  // Mutation for updating preferences with optimistic updates
   const preferencesMutation = useMutation(updatePreferences, {
-    onSuccess: () => {
-      // Invalidate watchlist query to refetch with new preferences
-      queryClient.invalidateQueries(["watchlist"]);
+    onMutate: async (newPreferences: Record<string, boolean>) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries(["watchlist"]);
+
+      // Snapshot the previous value
+      const previousWatchlist = queryClient.getQueryData<WatchlistItem[]>(["watchlist", userId]);
+
+      // Optimistically update the watchlist
+      if (previousWatchlist) {
+        queryClient.setQueryData<WatchlistItem[]>(
+          ["watchlist", userId],
+          previousWatchlist.map(item => ({
+            ...item,
+            isVisible: newPreferences[item.symbol] ?? false
+          }))
+        );
+      }
+
+      // Return context with previous data
+      return { previousWatchlist };
     },
-    onError: (error) => {
-      console.error("Failed to update preferences:", error);
+    onError: (err, newPreferences, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(["watchlist", userId], context.previousWatchlist);
+      }
+      console.error("Failed to update preferences:", err);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure consistency
+      queryClient.invalidateQueries(["watchlist"]);
     },
   });
 
@@ -95,9 +120,11 @@ export default function WatchlistCard({
         allPreferences[item.symbol] = tempVisibility[item.symbol] ?? false;
       });
       
-      // Update preferences in Supabase
-      preferencesMutation.mutate(allPreferences);
+      // Close modal immediately for better UX
       setIsModalOpen(false);
+      
+      // Update preferences in Supabase (optimistically)
+      preferencesMutation.mutate(allPreferences);
     }
   }, [watchlist, tempVisibility, preferencesMutation]);
 
@@ -164,7 +191,7 @@ export default function WatchlistCard({
     );
   }
 
-  if (isFetching || preferencesMutation.isLoading) {
+  if (isFetching) {
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -266,8 +293,12 @@ export default function WatchlistCard({
             <Button variant="outline" size="sm">
               View All
             </Button>
-            <Button size="sm" onClick={openSelectionModal}>
-              Edit
+            <Button 
+              size="sm" 
+              onClick={openSelectionModal}
+              disabled={preferencesMutation.isLoading}
+            >
+              {preferencesMutation.isLoading ? "Saving..." : "Edit"}
             </Button>
           </div>
         </CardHeader>
