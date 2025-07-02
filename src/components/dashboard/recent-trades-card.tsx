@@ -9,33 +9,42 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockRecentTrades } from "@/lib/data/mock-data";
 import TradeValidationModal from "../trades/trade-validation-modal";
+import TradeCompletionModal from "../trades/trade-completion-modal";
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Trade } from "@/lib/types";
+import { MoreVertical, Trash2, Check } from "lucide-react";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type RecentTradesCardProps = {
   isSignedIn: boolean;
 };
 
 const fetchTrades = async (): Promise<Trade[]> => {
-  // const response = await fetch("/api/trades/recent");
-  //
-  // if (!response.ok) {
-  //   throw new Error("Failed to fetch trades");
-  // }
-  //
-  // return response.json();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const response = await fetch("/api/trades/recent");
 
-  return mockRecentTrades;
+  if (!response.ok) {
+    throw new Error("Failed to fetch trades");
+  }
+
+  return response.json();
 };
 
 export default function RecentTradesCard({
   isSignedIn,
 }: RecentTradesCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const {
     isFetching,
     isError,
@@ -53,6 +62,56 @@ export default function RecentTradesCard({
   const onTradeValidationSuccess = () => {
     setIsModalOpen(false);
     refetch();
+  };
+
+  const handleCompleteClick = (tradeId: string) => {
+    setSelectedTradeId(tradeId);
+    setCompletionModalOpen(true);
+  };
+
+  const onTradeCompletionSuccess = () => {
+    setCompletionModalOpen(false);
+    setSelectedTradeId(null);
+    refetch();
+  };
+
+  // Delete trade mutation
+  const deleteTradeMutation = useMutation(
+    async (tradeId: string) => {
+      const response = await fetch(`/api/trades/${tradeId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete trade");
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        toast("Trade deleted successfully", {
+          duration: 3000,
+          position: "top-center",
+        });
+        queryClient.invalidateQueries(["recentTrades"]);
+      },
+      onError: () => {
+        toast("Failed to delete trade", {
+          duration: 3000,
+          position: "top-center",
+        });
+      },
+    },
+  );
+
+  const handleDeleteClick = (tradeId: string) => {
+    if (deleteConfirmId === tradeId) {
+      // Second click - confirm delete
+      deleteTradeMutation.mutate(tradeId);
+      setDeleteConfirmId(null);
+    } else {
+      // First click - set confirmation state
+      setDeleteConfirmId(tradeId);
+      // Reset confirmation after 3 seconds
+      setTimeout(() => setDeleteConfirmId(null), 3000);
+    }
   };
 
   if (!isSignedIn) {
@@ -76,48 +135,21 @@ export default function RecentTradesCard({
           {/* Blurred skeleton background */}
           <div className="space-y-3 filter blur-sm opacity-70">
             {/* {Array(5) */}
-            {/*   .fill(0) */}
-            {/*   .map((_, index) => ( */}
-            {/*     <div */}
-            {/*       key={index} */}
-            {/*       className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0" */}
-            {/*     > */}
-            {/*       <div> */}
-            {/*         <div className="flex items-center"> */}
-            {/*           <Skeleton className="w-2 h-2 rounded-full mr-2" /> */}
-            {/*           <Skeleton className="h-5 w-16 rounded-md" /> */}
-            {/*         </div> */}
-            {/*         <Skeleton className="h-3 w-12 mt-1 rounded-md" /> */}
-            {/*       </div> */}
-            {/*       <div className="text-right"> */}
-            {/*         <Skeleton className="h-5 w-16 rounded-md mb-1" /> */}
-            {/*         <Skeleton className="h-3 w-24 rounded-md" /> */}
-            {/*       </div> */}
-            {/*     </div> */}
-            {/*   ))} */}
-            {mockRecentTrades.slice(0, 10).map((trade) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <div
-                key={trade.id}
+                key={num}
                 className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
               >
                 <div>
                   <div className="flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
-                    ></div>
-                    <div className="font-medium">{trade.type}</div>
+                    <div className="w-2 h-2 rounded-full mr-2 bg-stone-300"></div>
+                    <div className="font-medium">Trade</div>
                   </div>
-                  <div className="text-xs text-stone-500">{trade.time}</div>
+                  <div className="text-xs text-stone-500">--:--</div>
                 </div>
                 <div className="text-right">
-                  <div
-                    className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {trade.profit}
-                  </div>
-                  <div className="text-xs text-stone-500">
-                    {trade.entry} → {trade.exit}
-                  </div>
+                  <div className="font-medium text-stone-400">+0.00</div>
+                  <div className="text-xs text-stone-500">--- → ---</div>
                 </div>
               </div>
             ))}
@@ -207,48 +239,21 @@ export default function RecentTradesCard({
           {/* Blurred skeleton background */}
           <div className="space-y-3 filter blur-sm opacity-70">
             {/* {Array(5) */}
-            {/*   .fill(0) */}
-            {/*   .map((_, index) => ( */}
-            {/*     <div */}
-            {/*       key={index} */}
-            {/*       className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0" */}
-            {/*     > */}
-            {/*       <div> */}
-            {/*         <div className="flex items-center"> */}
-            {/*           <Skeleton className="w-2 h-2 rounded-full mr-2" /> */}
-            {/*           <Skeleton className="h-5 w-16 rounded-md" /> */}
-            {/*         </div> */}
-            {/*         <Skeleton className="h-3 w-12 mt-1 rounded-md" /> */}
-            {/*       </div> */}
-            {/*       <div className="text-right"> */}
-            {/*         <Skeleton className="h-5 w-16 rounded-md mb-1" /> */}
-            {/*         <Skeleton className="h-3 w-24 rounded-md" /> */}
-            {/*       </div> */}
-            {/*     </div> */}
-            {/*   ))} */}
-            {mockRecentTrades.slice(0, 10).map((trade) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <div
-                key={trade.id}
+                key={num}
                 className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
               >
                 <div>
                   <div className="flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
-                    ></div>
-                    <div className="font-medium">{trade.type}</div>
+                    <div className="w-2 h-2 rounded-full mr-2 bg-stone-300"></div>
+                    <div className="font-medium">Trade</div>
                   </div>
-                  <div className="text-xs text-stone-500">{trade.time}</div>
+                  <div className="text-xs text-stone-500">--:--</div>
                 </div>
                 <div className="text-right">
-                  <div
-                    className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {trade.profit}
-                  </div>
-                  <div className="text-xs text-stone-500">
-                    {trade.entry} → {trade.exit}
-                  </div>
+                  <div className="font-medium text-stone-400">+0.00</div>
+                  <div className="text-xs text-stone-500">--- → ---</div>
                 </div>
               </div>
             ))}
@@ -285,40 +290,137 @@ export default function RecentTradesCard({
         </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-auto">
-        <div className="space-y-3">
-          {trades.slice(0, 10).map((trade) => (
-            <div
-              key={trade.id}
-              className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
-            >
-              <div>
-                <div className="flex items-center">
-                  <div
-                    className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
-                  ></div>
-                  <div className="font-medium">{trade.type}</div>
-                </div>
-                <div className="text-xs text-stone-500">{trade.time}</div>
-              </div>
-              <div className="text-right">
-                <div
-                  className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                >
-                  {trade.profit}
-                </div>
-                <div className="text-xs text-stone-500">
-                  {trade.entry} → {trade.exit}
-                </div>
-              </div>
+        {trades.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+            <div className="text-stone-500 dark:text-stone-400 mb-2">
+              No trades yet
             </div>
-          ))}
-        </div>
+            <p className="text-stone-400 dark:text-stone-500 text-sm">
+              Start tracking your trades by clicking the &quot;New +&quot;
+              button
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {trades.slice(0, 10).map((trade) => (
+              <div
+                key={trade.id}
+                className="group relative flex items-center justify-between py-3 border-b border-stone-100 dark:border-stone-800 last:border-0 transition-colors hover:bg-stone-50/50 dark:hover:bg-stone-900/20 px-2 -mx-2 rounded overflow-hidden"
+              >
+                {/* Left section - stays fixed */}
+                <div>
+                  <div className="flex items-center">
+                    <div
+                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "long" ? "bg-green-500" : "bg-red-500"}`}
+                    ></div>
+                    <div className="font-medium capitalize">{trade.type}</div>
+                    <span className="ml-2 text-xs text-stone-500">
+                      {trade.symbol}
+                    </span>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    {trade.entry_time}
+                  </div>
+                </div>
+
+                {/* Right section - slides left on hover */}
+                <div className="text-right transition-transform duration-200 group-hover:-translate-x-8">
+                  {trade.status === "completed" ? (
+                    <>
+                      <div
+                        className={`font-medium ${
+                          trade.profit && trade.profit >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {trade.profit && trade.profit >= 0 ? "+" : ""}$
+                        {trade.profit?.toFixed(2) || "0.00"}
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        ${trade.entry_price.toFixed(2)} → $
+                        {trade.exit_price?.toFixed(2) || "---"}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="font-medium text-yellow-600">Pending</div>
+                      <div className="text-xs text-stone-500">
+                        Entry: ${trade.entry_price.toFixed(2)}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Dropdown positioned absolutely */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <DropdownMenu
+                    onOpenChange={(open) => {
+                      if (!open) setDeleteConfirmId(null);
+                    }}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-600"
+                        aria-label="Trade options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {trade.status === "pending" && (
+                        <DropdownMenuItem
+                          onClick={() => handleCompleteClick(trade.id)}
+                          className="text-green-600 focus:text-green-600"
+                        >
+                          <Check className="mr-2 h-4 w-4" />
+                          Complete trade
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          if (deleteConfirmId !== trade.id) {
+                            e.preventDefault(); // Prevent dropdown from closing on first click
+                          }
+                          handleDeleteClick(trade.id);
+                        }}
+                        onSelect={(e) => {
+                          if (deleteConfirmId !== trade.id) {
+                            e.preventDefault(); // Prevent dropdown from closing on first click
+                          }
+                        }}
+                        className={
+                          deleteConfirmId === trade.id
+                            ? "bg-red-50 text-red-700 focus:bg-red-100 focus:text-red-700 font-medium"
+                            : "text-red-600 focus:text-red-600"
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deleteConfirmId === trade.id
+                          ? "Confirm delete"
+                          : "Delete"}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
       <TradeValidationModal
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         onComplete={onTradeValidationSuccess}
       />
+      {selectedTradeId && (
+        <TradeCompletionModal
+          isOpen={completionModalOpen}
+          onOpenChange={setCompletionModalOpen}
+          tradeId={selectedTradeId}
+          onComplete={onTradeCompletionSuccess}
+        />
+      )}
     </Card>
   );
 }
