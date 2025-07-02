@@ -12,8 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TradeValidationModal from "../trades/trade-validation-modal";
 import TradeCompletionModal from "../trades/trade-completion-modal";
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Trade } from "@/lib/types";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 type RecentTradesCardProps = {
   isSignedIn: boolean;
@@ -35,6 +37,8 @@ export default function RecentTradesCard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const {
     isFetching,
     isError,
@@ -63,6 +67,45 @@ export default function RecentTradesCard({
     setCompletionModalOpen(false);
     setSelectedTradeId(null);
     refetch();
+  };
+
+  // Delete trade mutation
+  const deleteTradeMutation = useMutation(
+    async (tradeId: string) => {
+      const response = await fetch(`/api/trades/${tradeId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete trade");
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        toast("Trade deleted successfully", {
+          duration: 3000,
+          position: "top-center",
+        });
+        queryClient.invalidateQueries(["recentTrades"]);
+        setDeleteConfirmId(null);
+      },
+      onError: () => {
+        toast("Failed to delete trade", {
+          duration: 3000,
+          position: "top-center",
+        });
+      },
+    }
+  );
+
+  const handleDeleteClick = (tradeId: string) => {
+    if (deleteConfirmId === tradeId) {
+      // Second click - confirm delete
+      deleteTradeMutation.mutate(tradeId);
+    } else {
+      // First click - set confirmation state
+      setDeleteConfirmId(tradeId);
+      // Reset confirmation after 3 seconds
+      setTimeout(() => setDeleteConfirmId(null), 3000);
+    }
   };
 
   if (!isSignedIn) {
@@ -241,6 +284,19 @@ export default function RecentTradesCard({
         </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-auto">
+        {trades.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+            <div className="text-stone-500 dark:text-stone-400 mb-2">
+              No trades yet
+            </div>
+            <p className="text-stone-400 dark:text-stone-500 text-sm mb-4">
+              Start tracking your trades by clicking the &quot;New +&quot; button
+            </p>
+            <Button size="sm" onClick={() => setIsModalOpen(true)}>
+              Create Your First Trade
+            </Button>
+          </div>
+        ) : (
         <div className="space-y-3">
           {trades.slice(0, 10).map((trade) => (
             <div
@@ -260,16 +316,33 @@ export default function RecentTradesCard({
               <div className="text-right">
                 {trade.status === "completed" ? (
                   <>
-                    <div
-                      className={`font-medium ${
-                        trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {trade.profit && trade.profit >= 0 ? "+" : ""}
-                      {trade.profit?.toFixed(2) || "0.00"}
-                    </div>
-                    <div className="text-xs text-stone-500">
-                      {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div
+                          className={`font-medium ${
+                            trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {trade.profit && trade.profit >= 0 ? "+" : ""}
+                          {trade.profit?.toFixed(2) || "0.00"}
+                        </div>
+                        <div className="text-xs text-stone-500">
+                          {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(trade.id)}
+                        className={`h-7 w-7 p-0 ${
+                          deleteConfirmId === trade.id
+                            ? "text-red-600 hover:text-red-700"
+                            : "text-stone-500 hover:text-stone-700"
+                        }`}
+                        title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </>
                 ) : (
@@ -280,20 +353,36 @@ export default function RecentTradesCard({
                         Entry: {trade.entry_price.toFixed(2)}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCompleteClick(trade.id)}
-                      className="h-7 px-2 text-xs"
-                    >
-                      Complete
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCompleteClick(trade.id)}
+                        className="h-7 px-2 text-xs"
+                      >
+                        Complete
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(trade.id)}
+                        className={`h-7 w-7 p-0 ${
+                          deleteConfirmId === trade.id
+                            ? "text-red-600 hover:text-red-700"
+                            : "text-stone-500 hover:text-stone-700"
+                        }`}
+                        title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           ))}
         </div>
+        )}
       </CardContent>
       <TradeValidationModal
         isOpen={isModalOpen}

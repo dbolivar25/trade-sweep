@@ -36,3 +36,33 @@ export async function GET(
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth.protect();
+    const { id } = await context.params;
+
+    // Create authenticated Supabase client
+    const authSupabase = await createAuthenticatedSupabaseClient();
+
+    // Delete the trade
+    const { error } = await authSupabase
+      .from("trades")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId); // Ensure user owns this trade
+
+    if (error) {
+      console.error("Error deleting trade:", error);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Server error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
