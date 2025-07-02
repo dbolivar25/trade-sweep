@@ -19,8 +19,9 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { useState } from "react";
-import { useMutation } from "react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "react-query";
+import { WatchlistItem } from "@/lib/types";
 
 interface TradeValidationFormProps {
   tradeType: TradeType;
@@ -33,6 +34,8 @@ export default function TradeValidationForm({
 }: TradeValidationFormProps) {
   const { currentTime } = useTimeProvider();
   const [symbol, setSymbol] = useState("");
+  const [symbolError, setSymbolError] = useState<string | null>(null);
+  const [validSymbols, setValidSymbols] = useState<Set<string>>(new Set());
 
   const form = useForm<TradeValidationFormSchema>({
     resolver: zodResolver(tradeValidationFormSchema),
@@ -45,6 +48,39 @@ export default function TradeValidationForm({
       currentPrice: "",
     },
   });
+
+  // Fetch available symbols from watchlist
+  const { data: watchlistData } = useQuery<WatchlistItem[]>(
+    "watchlistSymbols",
+    async () => {
+      const response = await fetch("/api/watchlist");
+      if (!response.ok) throw new Error("Failed to fetch symbols");
+      return response.json();
+    },
+    {
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    }
+  );
+
+  // Update valid symbols when watchlist data changes
+  useEffect(() => {
+    if (watchlistData) {
+      const symbols = new Set(watchlistData.map((item) => item.symbol));
+      setValidSymbols(symbols);
+    }
+  }, [watchlistData]);
+
+  // Validate symbol on change
+  const handleSymbolChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setSymbol(value);
+    
+    if (value && validSymbols.size > 0 && !validSymbols.has(value)) {
+      setSymbolError(`Symbol "${value}" is not available for trading`);
+    } else {
+      setSymbolError(null);
+    }
+  };
 
   // Create trade mutation
   const createTradeMutation = useMutation(
@@ -85,8 +121,19 @@ export default function TradeValidationForm({
 
   // Handle form submission
   async function onSubmit(data: TradeValidationFormSchema) {
-    if (!symbol.trim()) {
+    const trimmedSymbol = symbol.trim().toUpperCase();
+    
+    if (!trimmedSymbol) {
       toast("Please enter a symbol", {
+        duration: 5000,
+        position: "top-center",
+      });
+      return;
+    }
+
+    // Validate symbol against available stocks
+    if (validSymbols.size > 0 && !validSymbols.has(trimmedSymbol)) {
+      toast(`Symbol "${trimmedSymbol}" is not available for trading`, {
         duration: 5000,
         position: "top-center",
       });
@@ -107,7 +154,7 @@ export default function TradeValidationForm({
     if (result.isValid) {
       // Create the trade in the database
       createTradeMutation.mutate({
-        symbol: symbol.toUpperCase(),
+        symbol: trimmedSymbol,
         type: tradeType,
         entry_price: data.currentPrice,
         fvg_high: data.fvgHigh,
@@ -130,11 +177,19 @@ export default function TradeValidationForm({
             id="symbol"
             type="text"
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
+            onChange={handleSymbolChange}
             placeholder="AAPL"
-            className="uppercase"
+            className={`uppercase ${symbolError ? "border-red-500" : ""}`}
             required
           />
+          {symbolError && (
+            <p className="text-sm text-red-500 mt-1">{symbolError}</p>
+          )}
+          {validSymbols.size > 0 && (
+            <p className="text-xs text-stone-500 mt-1">
+              Available: {Array.from(validSymbols).join(", ")}
+            </p>
+          )}
         </div>
         {tradeType === "long" ? (
           <FormField
