@@ -14,8 +14,14 @@ import TradeCompletionModal from "../trades/trade-completion-modal";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Trade } from "@/lib/types";
-import { Trash2, Check } from "lucide-react";
+import { MoreVertical, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type RecentTradesCardProps = {
   isSignedIn: boolean;
@@ -85,7 +91,6 @@ export default function RecentTradesCard({
           position: "top-center",
         });
         queryClient.invalidateQueries(["recentTrades"]);
-        setDeleteConfirmId(null);
       },
       onError: () => {
         toast("Failed to delete trade", {
@@ -93,13 +98,14 @@ export default function RecentTradesCard({
           position: "top-center",
         });
       },
-    }
+    },
   );
 
   const handleDeleteClick = (tradeId: string) => {
     if (deleteConfirmId === tradeId) {
       // Second click - confirm delete
       deleteTradeMutation.mutate(tradeId);
+      setDeleteConfirmId(null);
     } else {
       // First click - set confirmation state
       setDeleteConfirmId(tradeId);
@@ -290,88 +296,116 @@ export default function RecentTradesCard({
               No trades yet
             </div>
             <p className="text-stone-400 dark:text-stone-500 text-sm">
-              Start tracking your trades by clicking the &quot;New +&quot; button
+              Start tracking your trades by clicking the &quot;New +&quot;
+              button
             </p>
           </div>
         ) : (
-        <div className="space-y-3">
-          {trades.slice(0, 10).map((trade) => (
-            <div
-              key={trade.id}
-              className="group flex items-center justify-between py-3 border-b border-stone-100 dark:border-stone-800 last:border-0 transition-colors hover:bg-stone-50/50 dark:hover:bg-stone-900/20 px-2 -mx-2 rounded"
-            >
-              <div>
-                <div className="flex items-center">
-                  <div
-                    className={`w-2 h-2 rounded-full mr-2 ${trade.type === "long" ? "bg-green-500" : "bg-red-500"}`}
-                  ></div>
-                  <div className="font-medium capitalize">{trade.type}</div>
-                  <span className="ml-2 text-xs text-stone-500">{trade.symbol}</span>
+          <div className="space-y-3">
+            {trades.slice(0, 10).map((trade) => (
+              <div
+                key={trade.id}
+                className="group relative flex items-center justify-between py-3 border-b border-stone-100 dark:border-stone-800 last:border-0 transition-colors hover:bg-stone-50/50 dark:hover:bg-stone-900/20 px-2 -mx-2 rounded overflow-hidden"
+              >
+                {/* Left section - stays fixed */}
+                <div>
+                  <div className="flex items-center">
+                    <div
+                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "long" ? "bg-green-500" : "bg-red-500"}`}
+                    ></div>
+                    <div className="font-medium capitalize">{trade.type}</div>
+                    <span className="ml-2 text-xs text-stone-500">
+                      {trade.symbol}
+                    </span>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    {trade.entry_time}
+                  </div>
                 </div>
-                <div className="text-xs text-stone-500">{trade.entry_time}</div>
-              </div>
-              <div className="text-right">
-                {trade.status === "completed" ? (
-                  <>
-                    <div>
+
+                {/* Right section - slides left on hover */}
+                <div className="text-right transition-transform duration-200 group-hover:-translate-x-8">
+                  {trade.status === "completed" ? (
+                    <>
                       <div
                         className={`font-medium ${
-                          trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
+                          trade.profit && trade.profit >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
                         }`}
                       >
-                        {trade.profit && trade.profit >= 0 ? "+" : ""}
+                        {trade.profit && trade.profit >= 0 ? "+" : ""}$
                         {trade.profit?.toFixed(2) || "0.00"}
                       </div>
                       <div className="text-xs text-stone-500">
-                        {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
+                        ${trade.entry_price.toFixed(2)} → $
+                        {trade.exit_price?.toFixed(2) || "---"}
                       </div>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteClick(trade.id)}
-                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 ${
-                        deleteConfirmId === trade.id
-                          ? "opacity-100 text-red-500 hover:text-red-600"
-                          : "text-stone-400 hover:text-stone-600"
-                      }`}
-                      title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div>
+                    </>
+                  ) : (
+                    <>
                       <div className="font-medium text-yellow-600">Pending</div>
                       <div className="text-xs text-stone-500">
-                        Entry: {trade.entry_price.toFixed(2)}
+                        Entry: ${trade.entry_price.toFixed(2)}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    </>
+                  )}
+                </div>
+
+                {/* Dropdown positioned absolutely */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <DropdownMenu
+                    onOpenChange={(open) => {
+                      if (!open) setDeleteConfirmId(null);
+                    }}
+                  >
+                    <DropdownMenuTrigger asChild>
                       <button
-                        onClick={() => handleCompleteClick(trade.id)}
-                        className="p-1 rounded hover:bg-green-50 dark:hover:bg-green-950 text-green-600 hover:text-green-700"
-                        title="Complete trade"
+                        className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-600"
+                        aria-label="Trade options"
                       >
-                        <Check className="h-3.5 w-3.5" />
+                        <MoreVertical className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDeleteClick(trade.id)}
-                        className={`p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 ${
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {trade.status === "pending" && (
+                        <DropdownMenuItem
+                          onClick={() => handleCompleteClick(trade.id)}
+                          className="text-green-600 focus:text-green-600"
+                        >
+                          <Check className="mr-2 h-4 w-4" />
+                          Complete trade
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          if (deleteConfirmId !== trade.id) {
+                            e.preventDefault(); // Prevent dropdown from closing on first click
+                          }
+                          handleDeleteClick(trade.id);
+                        }}
+                        onSelect={(e) => {
+                          if (deleteConfirmId !== trade.id) {
+                            e.preventDefault(); // Prevent dropdown from closing on first click
+                          }
+                        }}
+                        className={
                           deleteConfirmId === trade.id
-                            ? "opacity-100 text-red-500 hover:text-red-600"
-                            : "text-stone-400 hover:text-stone-600"
-                        }`}
-                        title={deleteConfirmId === trade.id ? "Click again to confirm" : "Delete trade"}
+                            ? "bg-red-50 text-red-700 focus:bg-red-100 focus:text-red-700 font-medium"
+                            : "text-red-600 focus:text-red-600"
+                        }
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </>
-                )}
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deleteConfirmId === trade.id
+                          ? "Confirm delete"
+                          : "Delete"}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
       </CardContent>
       <TradeValidationModal

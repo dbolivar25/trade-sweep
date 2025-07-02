@@ -181,6 +181,7 @@ export default function TradeValidationForm({
             placeholder="AAPL"
             className={`uppercase ${symbolError ? "border-red-500" : ""}`}
             required
+            maxLength={10}
           />
           {symbolError && (
             <p className="text-sm text-red-500 mt-1">{symbolError}</p>

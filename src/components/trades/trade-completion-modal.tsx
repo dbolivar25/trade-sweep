@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "react-query";
 import { Trade } from "@/lib/types";
+import { validateTradePrice, calculateSafeProfit, TRADE_LIMITS } from "@/lib/constants/trade-limits";
+import { toast } from "sonner";
 
 interface TradeCompletionModalProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export default function TradeCompletionModal({
 }: TradeCompletionModalProps) {
   const [exitPrice, setExitPrice] = useState("");
   const [calculatedPnL, setCalculatedPnL] = useState<number | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   // Fetch trade details
   const { data: trade } = useQuery<Trade>(
@@ -69,31 +72,55 @@ export default function TradeCompletionModal({
     if (trade && exitPrice) {
       const exit = parseFloat(exitPrice);
       if (!isNaN(exit)) {
-        const entry = trade.entry_price;
-        const quantity = trade.quantity || 1;
-        
-        let pnl: number;
-        if (trade.type === "long") {
-          pnl = (exit - entry) * quantity;
-        } else {
-          pnl = (entry - exit) * quantity;
+        // Validate the exit price
+        const validation = validateTradePrice(exit);
+        if (!validation.isValid) {
+          setPriceError(validation.error || "Invalid price");
+          setCalculatedPnL(null);
+          return;
         }
+        
+        setPriceError(null);
+        const pnl = calculateSafeProfit(
+          trade.type,
+          trade.entry_price,
+          exit,
+          trade.quantity || 1
+        );
         
         setCalculatedPnL(pnl);
       } else {
         setCalculatedPnL(null);
+        setPriceError(null);
       }
     } else {
       setCalculatedPnL(null);
+      setPriceError(null);
     }
   }, [exitPrice, trade]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const exit = parseFloat(exitPrice);
-    if (!isNaN(exit) && exit > 0) {
-      completeTradeMutation.mutate(exit);
+    
+    if (isNaN(exit)) {
+      toast("Please enter a valid price", {
+        duration: 3000,
+        position: "top-center",
+      });
+      return;
     }
+    
+    const validation = validateTradePrice(exit);
+    if (!validation.isValid) {
+      toast(validation.error || "Invalid price", {
+        duration: 3000,
+        position: "top-center",
+      });
+      return;
+    }
+    
+    completeTradeMutation.mutate(exit);
   };
 
   if (!trade) return null;
@@ -125,16 +152,23 @@ export default function TradeCompletionModal({
               <Label htmlFor="exit_price" className="text-right">
                 Exit Price
               </Label>
-              <Input
-                id="exit_price"
-                type="number"
-                step="0.01"
-                value={exitPrice}
-                onChange={(e) => setExitPrice(e.target.value)}
-                className="col-span-3"
-                placeholder="0.00"
-                required
-              />
+              <div className="col-span-3">
+                <Input
+                  id="exit_price"
+                  type="number"
+                  step="0.01"
+                  value={exitPrice}
+                  onChange={(e) => setExitPrice(e.target.value)}
+                  className={priceError ? "border-red-500" : ""}
+                  placeholder="0.00"
+                  max={TRADE_LIMITS.MAX_PRICE}
+                  min={TRADE_LIMITS.MIN_PRICE}
+                  required
+                />
+                {priceError && (
+                  <p className="text-sm text-red-500 mt-1">{priceError}</p>
+                )}
+              </div>
             </div>
             {calculatedPnL !== null && (
               <div className="grid grid-cols-4 items-center gap-4">
@@ -159,7 +193,7 @@ export default function TradeCompletionModal({
             </Button>
             <Button
               type="submit"
-              disabled={!exitPrice || completeTradeMutation.isLoading}
+              disabled={!exitPrice || !!priceError || completeTradeMutation.isLoading}
             >
               {completeTradeMutation.isLoading ? "Completing..." : "Complete Trade"}
             </Button>
