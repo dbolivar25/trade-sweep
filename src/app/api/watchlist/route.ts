@@ -47,7 +47,18 @@ export async function GET() {
       }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
 
-    return NextResponse.json(watchlistItems);
+    // Cache based on time of day (same logic as historical data)
+    const now = new Date();
+    const hour = now.getUTCHours();
+    const cacheSeconds = (hour >= 5 && hour <= 21) ? 3600 : 1800;
+    
+    return NextResponse.json(watchlistItems, {
+      headers: {
+        'Cache-Control': `private, max-age=${cacheSeconds}`,
+        // 'private' because this includes user-specific preferences
+        // Only browser caching, no CDN caching for user-specific data
+      },
+    });
   } catch (error) {
     console.error("Server error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
