@@ -35,6 +35,7 @@ export interface WatchlistItem {
   symbol: string;
   price: number;
   change: string;
+  isVisible: boolean;
 }
 
 export interface StockEODData {

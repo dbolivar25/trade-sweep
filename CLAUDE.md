@@ -35,8 +35,8 @@ This is a Next.js 15 project using the App Router pattern with the following key
 
 1. **Trading Dashboard**: Main dashboard with welcome card, watchlist, and recent trades
 2. **Watchlist Management**: Users can track stock symbols and monitor price changes
-   - Both signed-in and guest modes supported
-   - Watchlist preferences stored persistently (localStorage for guests, user-specific storage for signed-in users)
+   - Requires user authentication
+   - Watchlist preferences stored persistently in Supabase with user-specific settings
 3. **Trade Validation**: System for validating trades based on specific conditions:
    - Time-based validation (trading hours)
    - Price-based conditions for long/short positions
@@ -45,7 +45,8 @@ This is a Next.js 15 project using the App Router pattern with the following key
 ### Key Components
 
 - **API Routes**:
-  - `/api/watchlist`: Fetches stock watchlist data from Supabase
+  - `/api/watchlist`: Fetches stock watchlist data from Supabase with user preferences
+  - `/api/watchlist/preferences`: Manages user watchlist visibility preferences
   - `/api/cron/stock-data`: Scheduled job to fetch and update stock data from external API
 
 - **Data Flow**:
@@ -59,6 +60,7 @@ This is a Next.js 15 project using the App Router pattern with the following key
 The application uses Supabase with tables including:
 - `stock_eod_data`: Historical end-of-day stock data
 - `latest_stock_eod_data`: Latest price information for watchlist items
+- `user_watchlist_preferences`: User-specific watchlist visibility preferences
 
 ### Architecture Patterns
 
@@ -69,6 +71,6 @@ The application uses Supabase with tables including:
 ## Important Notes
 
 - The application uses environment variables for API keys and database connections
-- Authentication is managed through Clerk
+- Authentication is managed through Clerk with JWT integration for Supabase RLS
 - Stock data is fetched from Financial Modeling Prep API
-- Watchlist selections are stored persistently based on user state
+- Watchlist preferences are stored in Supabase with user-specific RLS policies

@@ -2,28 +2,49 @@ import { NextResponse } from "next/server";
 import { WatchlistItem } from "@/lib/types";
 import { supabase } from "@/lib/data/supabase";
 import { auth } from "@clerk/nextjs/server";
+import { createAuthenticatedSupabaseClient } from "@/lib/data/supabase-server";
 
 export async function GET() {
   try {
-    const {} = await auth.protect();
+    const { userId } = await auth.protect();
 
-    const { data, error } = await supabase
+    // Fetch all stock data (doesn't need authentication)
+    const { data: stockData, error: stockError } = await supabase
       .from("latest_stock_eod_data")
       .select("id, symbol, close, change_percent")
       .order("symbol", { ascending: false });
 
-    if (error) {
-      console.error("Supabase error:", error);
+    if (stockError) {
+      console.error("Supabase error:", stockError);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 
-    // Format the data to match the WatchlistItem interface
-    const watchlistItems: WatchlistItem[] = data
+    // Fetch user preferences with authenticated client
+    const authSupabase = await createAuthenticatedSupabaseClient();
+    const { data: preferences, error: prefError } = await authSupabase
+      .from("user_watchlist_preferences")
+      .select("ticker_id, is_visible")
+      .eq("user_id", userId);
+
+    if (prefError) {
+      console.error("Error fetching preferences:", prefError);
+      // Continue without preferences - all items will be hidden by default
+    }
+
+    // Create a map of preferences for quick lookup
+    const preferencesMap = new Map<string, boolean>();
+    preferences?.forEach((pref) => {
+      preferencesMap.set(pref.ticker_id, pref.is_visible);
+    });
+
+    // Format the data to match the WatchlistItem interface with visibility info
+    const watchlistItems: WatchlistItem[] = stockData
       .map((item) => ({
         id: item.id,
         symbol: item.symbol,
         price: parseFloat(item.close.toFixed(2)),
         change: formatChangePercent(item.change_percent),
+        isVisible: preferencesMap.get(item.id) ?? false, // Default to false if no preference
       }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
 

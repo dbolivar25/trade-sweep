@@ -49,14 +49,14 @@ export const mockRecentTrades: Trade[] = [
 ];
 
 export const mockWatchlistItems: WatchlistItem[] = [
-  { id: 1, symbol: "AAPL", price: 178.92, change: "+1.45" },
-  { id: 2, symbol: "MSFT", price: 324.67, change: "-0.89" },
-  { id: 3, symbol: "AMZN", price: 142.55, change: "+2.12" },
-  { id: 4, symbol: "GOOGL", price: 139.72, change: "+0.74" },
-  // { id: 5, symbol: "TSLA", price: 267.33, change: "-1.23" },
-  // { id: 6, symbol: "META", price: 356.8, change: "+1.92" },
-  // { id: 7, symbol: "NVDA", price: 425.51, change: "+3.27" },
-  // { id: 8, symbol: "AMD", price: 142.38, change: "+0.56" },
-  // { id: 9, symbol: "INTC", price: 37.64, change: "-0.32" },
-  // { id: 10, symbol: "NFLX", price: 589.74, change: "+2.84" },
+  { id: 1, symbol: "AAPL", price: 178.92, change: "+1.45", isVisible: false },
+  { id: 2, symbol: "MSFT", price: 324.67, change: "-0.89", isVisible: false },
+  { id: 3, symbol: "AMZN", price: 142.55, change: "+2.12", isVisible: false },
+  { id: 4, symbol: "GOOGL", price: 139.72, change: "+0.74", isVisible: false },
+  // { id: 5, symbol: "TSLA", price: 267.33, change: "-1.23", isVisible: false },
+  // { id: 6, symbol: "META", price: 356.8, change: "+1.92", isVisible: false },
+  // { id: 7, symbol: "NVDA", price: 425.51, change: "+3.27", isVisible: false },
+  // { id: 8, symbol: "AMD", price: 142.38, change: "+0.56", isVisible: false },
+  // { id: 9, symbol: "INTC", price: 37.64, change: "-0.32", isVisible: false },
+  // { id: 10, symbol: "NFLX", price: 589.74, change: "+2.84", isVisible: false },
 ];
