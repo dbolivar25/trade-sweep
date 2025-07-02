@@ -21,13 +21,38 @@ export interface ValidationResult {
 }
 
 export interface Trade {
-  id: number;
-  type: string;
-  entry: number;
-  exit: number;
-  status: string;
-  time: string;
-  profit: string;
+  id: string;
+  user_id: string;
+  symbol: string;
+  type: 'long' | 'short';
+  status: 'pending' | 'completed';
+  
+  // Prices
+  entry_price: number;
+  exit_price?: number;
+  quantity: number;
+  
+  // Validation data
+  fvg_high: number;
+  fvg_low: number;
+  recent_limit: number;
+  buy_side_liquidity?: number;
+  sell_side_liquidity?: number;
+  
+  // Calculated
+  profit?: number;
+  profit_percent?: number;
+  
+  // Times
+  entry_time: string; // "HH:mm"
+  entry_date: string; // ISO timestamp
+  exit_time?: string;
+  exit_date?: string;
+  
+  // Metadata
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WatchlistItem {

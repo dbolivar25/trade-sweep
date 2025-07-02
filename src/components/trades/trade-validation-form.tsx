@@ -19,6 +19,8 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import { useState } from "react";
+import { useMutation } from "react-query";
 
 interface TradeValidationFormProps {
   tradeType: TradeType;
@@ -30,6 +32,7 @@ export default function TradeValidationForm({
   onComplete,
 }: TradeValidationFormProps) {
   const { currentTime } = useTimeProvider();
+  const [symbol, setSymbol] = useState("");
 
   const form = useForm<TradeValidationFormSchema>({
     resolver: zodResolver(tradeValidationFormSchema),
@@ -43,8 +46,53 @@ export default function TradeValidationForm({
     },
   });
 
+  // Create trade mutation
+  const createTradeMutation = useMutation(
+    async (tradeData: {
+      symbol: string;
+      type: string;
+      entry_price: string;
+      fvg_high: string;
+      fvg_low: string;
+      recent_limit: string;
+      buy_side_liquidity: string | null;
+      sell_side_liquidity: string | null;
+    }) => {
+      const response = await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tradeData),
+      });
+      if (!response.ok) throw new Error("Failed to create trade");
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        toast("Trade created successfully!", {
+          duration: 5000,
+          position: "top-center",
+        });
+        onComplete();
+      },
+      onError: () => {
+        toast("Failed to create trade", {
+          duration: 5000,
+          position: "top-center",
+        });
+      },
+    }
+  );
+
   // Handle form submission
-  function onSubmit(data: TradeValidationFormSchema) {
+  async function onSubmit(data: TradeValidationFormSchema) {
+    if (!symbol.trim()) {
+      toast("Please enter a symbol", {
+        duration: 5000,
+        position: "top-center",
+      });
+      return;
+    }
+
     const result = validateTrade(tradeType, data, currentTime);
 
     toast(
@@ -57,13 +105,37 @@ export default function TradeValidationForm({
     );
 
     if (result.isValid) {
-      onComplete();
+      // Create the trade in the database
+      createTradeMutation.mutate({
+        symbol: symbol.toUpperCase(),
+        type: tradeType,
+        entry_price: data.currentPrice,
+        fvg_high: data.fvgHigh,
+        fvg_low: data.fvgLow,
+        recent_limit: data.recentLimit,
+        buy_side_liquidity: data.buySideLiquidity || null,
+        sell_side_liquidity: data.sellSideLiquidity || null,
+      });
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="symbol" className="text-sm font-medium">
+            Symbol
+          </label>
+          <Input
+            id="symbol"
+            type="text"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            placeholder="AAPL"
+            className="uppercase"
+            required
+          />
+        </div>
         {tradeType === "long" ? (
           <FormField
             control={form.control}
@@ -150,8 +222,12 @@ export default function TradeValidationForm({
           )}
         />
 
-        <Button type="submit" className="w-full">
-          Validate Entry
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={createTradeMutation.isLoading}
+        >
+          {createTradeMutation.isLoading ? "Creating Trade..." : "Validate Entry"}
         </Button>
       </form>
     </Form>

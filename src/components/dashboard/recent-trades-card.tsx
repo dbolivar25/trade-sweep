@@ -9,8 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockRecentTrades } from "@/lib/data/mock-data";
 import TradeValidationModal from "../trades/trade-validation-modal";
+import TradeCompletionModal from "../trades/trade-completion-modal";
 import { useState } from "react";
 import { useQuery } from "react-query";
 import { Trade } from "@/lib/types";
@@ -20,22 +20,21 @@ type RecentTradesCardProps = {
 };
 
 const fetchTrades = async (): Promise<Trade[]> => {
-  // const response = await fetch("/api/trades/recent");
-  //
-  // if (!response.ok) {
-  //   throw new Error("Failed to fetch trades");
-  // }
-  //
-  // return response.json();
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const response = await fetch("/api/trades/recent");
 
-  return mockRecentTrades;
+  if (!response.ok) {
+    throw new Error("Failed to fetch trades");
+  }
+
+  return response.json();
 };
 
 export default function RecentTradesCard({
   isSignedIn,
 }: RecentTradesCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
   const {
     isFetching,
     isError,
@@ -52,6 +51,17 @@ export default function RecentTradesCard({
 
   const onTradeValidationSuccess = () => {
     setIsModalOpen(false);
+    refetch();
+  };
+
+  const handleCompleteClick = (tradeId: string) => {
+    setSelectedTradeId(tradeId);
+    setCompletionModalOpen(true);
+  };
+
+  const onTradeCompletionSuccess = () => {
+    setCompletionModalOpen(false);
+    setSelectedTradeId(null);
     refetch();
   };
 
@@ -76,48 +86,21 @@ export default function RecentTradesCard({
           {/* Blurred skeleton background */}
           <div className="space-y-3 filter blur-sm opacity-70">
             {/* {Array(5) */}
-            {/*   .fill(0) */}
-            {/*   .map((_, index) => ( */}
-            {/*     <div */}
-            {/*       key={index} */}
-            {/*       className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0" */}
-            {/*     > */}
-            {/*       <div> */}
-            {/*         <div className="flex items-center"> */}
-            {/*           <Skeleton className="w-2 h-2 rounded-full mr-2" /> */}
-            {/*           <Skeleton className="h-5 w-16 rounded-md" /> */}
-            {/*         </div> */}
-            {/*         <Skeleton className="h-3 w-12 mt-1 rounded-md" /> */}
-            {/*       </div> */}
-            {/*       <div className="text-right"> */}
-            {/*         <Skeleton className="h-5 w-16 rounded-md mb-1" /> */}
-            {/*         <Skeleton className="h-3 w-24 rounded-md" /> */}
-            {/*       </div> */}
-            {/*     </div> */}
-            {/*   ))} */}
-            {mockRecentTrades.slice(0, 10).map((trade) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <div
-                key={trade.id}
+                key={num}
                 className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
               >
                 <div>
                   <div className="flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
-                    ></div>
-                    <div className="font-medium">{trade.type}</div>
+                    <div className="w-2 h-2 rounded-full mr-2 bg-stone-300"></div>
+                    <div className="font-medium">Trade</div>
                   </div>
-                  <div className="text-xs text-stone-500">{trade.time}</div>
+                  <div className="text-xs text-stone-500">--:--</div>
                 </div>
                 <div className="text-right">
-                  <div
-                    className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {trade.profit}
-                  </div>
-                  <div className="text-xs text-stone-500">
-                    {trade.entry} → {trade.exit}
-                  </div>
+                  <div className="font-medium text-stone-400">+0.00</div>
+                  <div className="text-xs text-stone-500">--- → ---</div>
                 </div>
               </div>
             ))}
@@ -207,48 +190,21 @@ export default function RecentTradesCard({
           {/* Blurred skeleton background */}
           <div className="space-y-3 filter blur-sm opacity-70">
             {/* {Array(5) */}
-            {/*   .fill(0) */}
-            {/*   .map((_, index) => ( */}
-            {/*     <div */}
-            {/*       key={index} */}
-            {/*       className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0" */}
-            {/*     > */}
-            {/*       <div> */}
-            {/*         <div className="flex items-center"> */}
-            {/*           <Skeleton className="w-2 h-2 rounded-full mr-2" /> */}
-            {/*           <Skeleton className="h-5 w-16 rounded-md" /> */}
-            {/*         </div> */}
-            {/*         <Skeleton className="h-3 w-12 mt-1 rounded-md" /> */}
-            {/*       </div> */}
-            {/*       <div className="text-right"> */}
-            {/*         <Skeleton className="h-5 w-16 rounded-md mb-1" /> */}
-            {/*         <Skeleton className="h-3 w-24 rounded-md" /> */}
-            {/*       </div> */}
-            {/*     </div> */}
-            {/*   ))} */}
-            {mockRecentTrades.slice(0, 10).map((trade) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <div
-                key={trade.id}
+                key={num}
                 className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800 last:border-0"
               >
                 <div>
                   <div className="flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
-                    ></div>
-                    <div className="font-medium">{trade.type}</div>
+                    <div className="w-2 h-2 rounded-full mr-2 bg-stone-300"></div>
+                    <div className="font-medium">Trade</div>
                   </div>
-                  <div className="text-xs text-stone-500">{trade.time}</div>
+                  <div className="text-xs text-stone-500">--:--</div>
                 </div>
                 <div className="text-right">
-                  <div
-                    className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {trade.profit}
-                  </div>
-                  <div className="text-xs text-stone-500">
-                    {trade.entry} → {trade.exit}
-                  </div>
+                  <div className="font-medium text-stone-400">+0.00</div>
+                  <div className="text-xs text-stone-500">--- → ---</div>
                 </div>
               </div>
             ))}
@@ -294,21 +250,46 @@ export default function RecentTradesCard({
               <div>
                 <div className="flex items-center">
                   <div
-                    className={`w-2 h-2 rounded-full mr-2 ${trade.type === "Long" ? "bg-green-500" : "bg-red-500"}`}
+                    className={`w-2 h-2 rounded-full mr-2 ${trade.type === "long" ? "bg-green-500" : "bg-red-500"}`}
                   ></div>
-                  <div className="font-medium">{trade.type}</div>
+                  <div className="font-medium capitalize">{trade.type}</div>
+                  <span className="ml-2 text-xs text-stone-500">{trade.symbol}</span>
                 </div>
-                <div className="text-xs text-stone-500">{trade.time}</div>
+                <div className="text-xs text-stone-500">{trade.entry_time}</div>
               </div>
               <div className="text-right">
-                <div
-                  className={`font-medium ${trade.profit.startsWith("+") ? "text-green-600" : "text-red-600"}`}
-                >
-                  {trade.profit}
-                </div>
-                <div className="text-xs text-stone-500">
-                  {trade.entry} → {trade.exit}
-                </div>
+                {trade.status === "completed" ? (
+                  <>
+                    <div
+                      className={`font-medium ${
+                        trade.profit && trade.profit >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {trade.profit && trade.profit >= 0 ? "+" : ""}
+                      {trade.profit?.toFixed(2) || "0.00"}
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      {trade.entry_price.toFixed(2)} → {trade.exit_price?.toFixed(2) || "---"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-medium text-stone-500">Pending</div>
+                      <div className="text-xs text-stone-500">
+                        Entry: {trade.entry_price.toFixed(2)}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCompleteClick(trade.id)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Complete
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -319,6 +300,14 @@ export default function RecentTradesCard({
         onOpenChange={setIsModalOpen}
         onComplete={onTradeValidationSuccess}
       />
+      {selectedTradeId && (
+        <TradeCompletionModal
+          isOpen={completionModalOpen}
+          onOpenChange={setCompletionModalOpen}
+          tradeId={selectedTradeId}
+          onComplete={onTradeCompletionSuccess}
+        />
+      )}
     </Card>
   );
 }
