@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,126 +12,53 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { mockWatchlistItems } from "@/lib/data/mock-data";
 import { WatchlistItem } from "@/lib/types";
-import { useQuery } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import TickerSelectionModal from "@/components/watchlist/ticker-selection-modal";
-
-// Simple type for tracking ticker visibility state
-type TickerVisibility = {
-  [id: string]: boolean;
-};
 
 type WatchlistCardProps = {
   isSignedIn: boolean;
-  userId?: string; // Optional user ID for storage
+  userId?: string;
 };
 
-// Function to get storage key for a specific user
-function getStorageKey(userId?: string): string {
-  return userId
-    ? `watchlist-ticker-visibility-${userId}`
-    : "watchlist-ticker-visibility-default";
-}
-
-// Function to save visibility state to localStorage
-function saveVisibilityToStorage(
-  visibilityState: TickerVisibility,
-  userId?: string,
-): void {
-  if (typeof window !== "undefined") {
-    try {
-      const key = getStorageKey(userId);
-      localStorage.setItem(key, JSON.stringify(visibilityState));
-    } catch (error) {
-      console.error("Failed to save ticker visibility to localStorage:", error);
-    }
-  }
-}
-
-// Function to load visibility state from localStorage
-function loadVisibilityFromStorage(userId?: string): TickerVisibility | null {
-  if (typeof window !== "undefined") {
-    try {
-      const key = getStorageKey(userId);
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load ticker visibility from localStorage:",
-        error,
-      );
-    }
-  }
-  return null;
-}
-
-// Function to fetch watchlist data
+// Function to fetch watchlist data with visibility
 const fetchWatchList = async (): Promise<WatchlistItem[]> => {
   const response = await fetch("/api/watchlist");
-
   if (!response.ok) {
-    throw new Error("Failed to fetch trades");
+    throw new Error("Failed to fetch watchlist");
   }
-
   return response.json();
 };
 
-// Function to initialize visibility state, using stored values if available
-function initializeVisibility(
-  items: WatchlistItem[],
-  userId?: string,
-): TickerVisibility {
-  // Try to load from localStorage first
-  const storedVisibility = loadVisibilityFromStorage(userId);
-
-  // Create a fresh object with all tickers visible by default
-  const defaultVisibility = items.reduce((acc, item) => {
-    acc[item.id] = false;
-    return acc;
-  }, {} as TickerVisibility);
-
-  // If we have stored values, merge them with defaults
-  // This ensures any new tickers that didn't exist in storage get default values
-  if (storedVisibility) {
-    return {
-      ...defaultVisibility,
-      ...storedVisibility,
-    };
+// Function to update preferences in Supabase
+const updatePreferences = async (preferences: Record<string, boolean>) => {
+  const response = await fetch("/api/watchlist/preferences", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ preferences }),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to update preferences");
   }
-
-  return defaultVisibility;
-}
-
-// Function to filter visible tickers
-function getVisibleTickers(
-  items: WatchlistItem[],
-  visibilityState: TickerVisibility,
-): WatchlistItem[] {
-  return items.filter((item) => visibilityState[item.id]);
-}
+  
+  return response.json();
+};
 
 export default function WatchlistCard({
   isSignedIn,
   userId,
 }: WatchlistCardProps) {
-  // State for tracking the visibility of tickers
-  const [tickerVisibility, setTickerVisibility] = useState<TickerVisibility>(
-    {},
-  );
   // State for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Temporary state for when editing in the modal
-  const [tempVisibility, setTempVisibility] = useState<TickerVisibility>({});
-  // Track the last userId we loaded for
-  const [lastLoadedUserId, setLastLoadedUserId] = useState<string | undefined>(
-    userId,
-  );
-  // Flag to indicate initial load needed
-  const [needsInitialization, setNeedsInitialization] = useState(true);
+  const [tempVisibility, setTempVisibility] = useState<Record<string, boolean>>({});
+  
+  const queryClient = useQueryClient();
 
   const {
-    isFetching,
+    isLoading,
     isError,
     data: watchlist,
   } = useQuery(["watchlist", userId], fetchWatchList, {
@@ -140,54 +67,80 @@ export default function WatchlistCard({
     retry: 3,
   });
 
-  // Effect for user sign-out - clears states
-  useEffect(() => {
-    if (!isSignedIn) {
-      setTickerVisibility({});
-      setTempVisibility({});
-      setNeedsInitialization(true);
-    }
-  }, [isSignedIn]);
+  // Mutation for updating preferences with optimistic updates
+  const preferencesMutation = useMutation(updatePreferences, {
+    onMutate: async (newPreferences: Record<string, boolean>) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries(["watchlist"]);
 
-  // Effect for user change - sets the flag to initialize
-  useEffect(() => {
-    if (userId !== lastLoadedUserId) {
-      setNeedsInitialization(true);
-    }
-  }, [userId, lastLoadedUserId]);
+      // Snapshot the previous value
+      const previousWatchlist = queryClient.getQueryData<WatchlistItem[]>(["watchlist", userId]);
 
-  // Effect for initialization - only runs when needed
-  useEffect(() => {
-    // Only initialize if we have data and need initialization
-    if (watchlist && isSignedIn && needsInitialization) {
-      const initialState = initializeVisibility(watchlist, userId);
-      setTickerVisibility(initialState);
-      setTempVisibility(initialState);
-      setLastLoadedUserId(userId);
-      setNeedsInitialization(false);
-    }
-  }, [watchlist, isSignedIn, needsInitialization, userId]);
+      // Optimistically update the watchlist
+      if (previousWatchlist) {
+        queryClient.setQueryData<WatchlistItem[]>(
+          ["watchlist", userId],
+          previousWatchlist.map(item => ({
+            ...item,
+            isVisible: newPreferences[item.symbol] ?? false
+          }))
+        );
+      }
+
+      // Return context with previous data
+      return { previousWatchlist };
+    },
+    onError: (err, newPreferences, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(["watchlist", userId], context.previousWatchlist);
+      }
+      console.error("Failed to update preferences:", err);
+    },
+    onSettled: () => {
+      // Refetch in the background to ensure consistency
+      // The optimistic update stays visible during refetch
+      queryClient.invalidateQueries(["watchlist"]);
+    },
+  });
 
   // Function to toggle a ticker's visibility in the modal
-  function toggleTicker(id: string) {
+  const toggleTicker = useCallback((id: string) => {
     setTempVisibility((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
-  }
+  }, []);
 
-  // Function to apply changes from modal and save to localStorage
-  function applyVisibilityChanges() {
-    const newVisibility = { ...tempVisibility };
-    setTickerVisibility(newVisibility);
-    saveVisibilityToStorage(newVisibility, userId);
-  }
+  // Function to apply changes from modal
+  const applyVisibilityChanges = useCallback(() => {
+    if (watchlist) {
+      // Create preferences object with all tickers
+      const allPreferences: Record<string, boolean> = {};
+      watchlist.forEach(item => {
+        allPreferences[item.symbol] = tempVisibility[item.symbol] ?? false;
+      });
+      
+      // Close modal immediately for better UX
+      setIsModalOpen(false);
+      
+      // Update preferences in Supabase (optimistically)
+      preferencesMutation.mutate(allPreferences);
+    }
+  }, [watchlist, tempVisibility, preferencesMutation]);
 
   // Function to open modal
-  function openSelectionModal() {
-    setTempVisibility({ ...tickerVisibility });
-    setIsModalOpen(true);
-  }
+  const openSelectionModal = useCallback(() => {
+    if (watchlist) {
+      // Initialize temp visibility with current state from watchlist
+      const currentVisibility: Record<string, boolean> = {};
+      watchlist.forEach(item => {
+        currentVisibility[item.symbol] = item.isVisible;
+      });
+      setTempVisibility(currentVisibility);
+      setIsModalOpen(true);
+    }
+  }, [watchlist]);
 
   if (!isSignedIn) {
     return (
@@ -211,7 +164,7 @@ export default function WatchlistCard({
           <div className="grid grid-cols-3 gap-4 filter blur-sm opacity-70">
             {mockWatchlistItems.slice(0, 9).map((item) => (
               <div
-                key={item.id}
+                key={item.symbol}
                 className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
               >
                 <div className="font-medium">{item.symbol}</div>
@@ -239,7 +192,7 @@ export default function WatchlistCard({
     );
   }
 
-  if (isFetching) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -298,7 +251,7 @@ export default function WatchlistCard({
           <div className="grid grid-cols-3 gap-4 filter blur-sm opacity-70">
             {mockWatchlistItems.slice(0, 9).map((item) => (
               <div
-                key={item.id}
+                key={item.symbol}
                 className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
               >
                 <div className="font-medium">{item.symbol}</div>
@@ -312,13 +265,13 @@ export default function WatchlistCard({
             ))}
           </div>
 
-          {/* Sign in message overlay */}
+          {/* Error message overlay */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <p className="text-stone-500 dark:text-stone-400 mb-2">
               There was an error fetching your watchlist
             </p>
             <p className="text-stone-400 dark:text-stone-500 text-sm">
-              Please sign in to view
+              Please try again later
             </p>
           </div>
         </CardContent>
@@ -326,8 +279,8 @@ export default function WatchlistCard({
     );
   }
 
-  // Get visible tickers based on current visibility state
-  const visibleTickers = getVisibleTickers(watchlist, tickerVisibility);
+  // Get visible tickers from the watchlist data
+  const visibleTickers = watchlist.filter(item => item.isVisible);
 
   return (
     <>
@@ -341,8 +294,12 @@ export default function WatchlistCard({
             <Button variant="outline" size="sm">
               View All
             </Button>
-            <Button size="sm" onClick={openSelectionModal}>
-              Edit
+            <Button 
+              size="sm" 
+              onClick={openSelectionModal}
+              disabled={preferencesMutation.isLoading}
+            >
+              {preferencesMutation.isLoading ? "Saving..." : "Edit"}
             </Button>
           </div>
         </CardHeader>
@@ -351,7 +308,7 @@ export default function WatchlistCard({
             {visibleTickers.length > 0 ? (
               visibleTickers.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.symbol}
                   className="p-3 border border-stone-200 dark:border-stone-800 rounded-lg hover:border-stone-300 dark:hover:border-stone-700 transition-colors cursor-pointer"
                 >
                   <div className="font-medium">{item.symbol}</div>

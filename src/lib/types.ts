@@ -31,10 +31,10 @@ export interface Trade {
 }
 
 export interface WatchlistItem {
-  id: number;
   symbol: string;
   price: number;
   change: string;
+  isVisible: boolean;
 }
 
 export interface StockEODData {
