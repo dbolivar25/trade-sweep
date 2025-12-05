@@ -7,7 +7,6 @@ import { CommandMenu } from "@/components/layout/command-bar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import ReactQueryProvider from "@/components/providers/react-query-provider";
-import { MarketTicker } from "@/components/layout/market-ticker";
 
 export const metadata: Metadata = {
   title: {
@@ -57,7 +56,6 @@ export default function RootLayout({
                 <div className="flex min-h-screen w-full">
                   <AppSidebar />
                   <main className="flex-1 flex flex-col min-h-screen">
-                    <MarketTicker />
                     <div className="flex-1 px-6 py-8 lg:px-12">
                       {children}
                     </div>
