@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, ArrowRight, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,18 +37,17 @@ export function WatchlistPreview({ isSignedIn, userId }: WatchlistPreviewProps) 
   );
   const queryClient = useQueryClient();
 
-  const { data: watchlist, isLoading } = useQuery(
-    ["watchlist", userId],
-    fetchWatchList,
-    {
-      enabled: isSignedIn,
-      staleTime: 60 * 60 * 1000,
-    }
-  );
+  const { data: watchlist, isLoading } = useQuery({
+    queryKey: ["watchlist", userId],
+    queryFn: fetchWatchList,
+    enabled: isSignedIn,
+    staleTime: 60 * 60 * 1000,
+  });
 
-  const preferencesMutation = useMutation(updatePreferences, {
+  const preferencesMutation = useMutation({
+    mutationFn: updatePreferences,
     onMutate: async (newPreferences) => {
-      await queryClient.cancelQueries(["watchlist"]);
+      await queryClient.cancelQueries({ queryKey: ["watchlist"] });
       const previousWatchlist = queryClient.getQueryData<WatchlistItem[]>([
         "watchlist",
         userId,
@@ -73,7 +72,7 @@ export function WatchlistPreview({ isSignedIn, userId }: WatchlistPreviewProps) 
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries(["watchlist"]);
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
     },
   });
 

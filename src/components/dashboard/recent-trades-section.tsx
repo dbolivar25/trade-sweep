@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -43,33 +43,29 @@ export function RecentTradesSection({ isSignedIn }: RecentTradesSectionProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: trades, isLoading, refetch } = useQuery(
-    ["recentTrades"],
-    fetchTrades,
-    {
-      enabled: isSignedIn,
-      staleTime: 5 * 60 * 1000,
-    }
-  );
+  const { data: trades, isLoading, refetch } = useQuery({
+    queryKey: ["recentTrades"],
+    queryFn: fetchTrades,
+    enabled: isSignedIn,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const deleteTradeMutation = useMutation(
-    async (tradeId: string) => {
+  const deleteTradeMutation = useMutation({
+    mutationFn: async (tradeId: string) => {
       const response = await fetch(`/api/trades/${tradeId}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete trade");
       return response.json();
     },
-    {
-      onSuccess: () => {
-        toast.success("Trade deleted successfully");
-        queryClient.invalidateQueries(["recentTrades"]);
-      },
-      onError: () => {
-        toast.error("Failed to delete trade");
-      },
-    }
-  );
+    onSuccess: () => {
+      toast.success("Trade deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["recentTrades"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete trade");
+    },
+  });
 
   const handleDeleteClick = (tradeId: string) => {
     if (deleteConfirmId === tradeId) {

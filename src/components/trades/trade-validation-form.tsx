@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { WatchlistItem } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,15 +52,15 @@ export default function TradeValidationForm({
     },
   });
 
-  const { data: watchlistData } = useQuery<WatchlistItem[]>(
-    "watchlistSymbols",
-    async () => {
+  const { data: watchlistData } = useQuery<WatchlistItem[]>({
+    queryKey: ["watchlistSymbols"],
+    queryFn: async () => {
       const response = await fetch("/api/watchlist");
       if (!response.ok) throw new Error("Failed to fetch symbols");
       return response.json();
     },
-    { staleTime: 5 * 60 * 1000 }
-  );
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (watchlistData) {
@@ -80,8 +80,8 @@ export default function TradeValidationForm({
     }
   };
 
-  const createTradeMutation = useMutation(
-    async (tradeData: {
+  const createTradeMutation = useMutation({
+    mutationFn: async (tradeData: {
       symbol: string;
       type: string;
       entry_price: string;
@@ -99,16 +99,14 @@ export default function TradeValidationForm({
       if (!response.ok) throw new Error("Failed to create trade");
       return response.json();
     },
-    {
-      onSuccess: () => {
-        toast.success("Trade created successfully!");
-        onComplete();
-      },
-      onError: () => {
-        toast.error("Failed to create trade");
-      },
-    }
-  );
+    onSuccess: () => {
+      toast.success("Trade created successfully!");
+      onComplete();
+    },
+    onError: () => {
+      toast.error("Failed to create trade");
+    },
+  });
 
   async function onSubmit(data: TradeValidationFormSchema) {
     const trimmedSymbol = symbol.trim().toUpperCase();
@@ -281,9 +279,9 @@ export default function TradeValidationForm({
               ? "bg-gain hover:bg-gain/90 text-white"
               : "bg-loss hover:bg-loss/90 text-white"
           )}
-          disabled={createTradeMutation.isLoading || !!symbolError}
+          disabled={createTradeMutation.isPending || !!symbolError}
         >
-          {createTradeMutation.isLoading ? (
+          {createTradeMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Creating Trade...

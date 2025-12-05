@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { StockCard } from "@/components/watchlist/stock-card";
 import { LineChart, TrendingUp, TrendingDown } from "lucide-react";
 import { HistoricalStockData } from "@/app/api/stocks/historical/route";
@@ -13,15 +13,13 @@ const fetchHistoricalData = async (): Promise<HistoricalStockData[]> => {
 };
 
 export default function Watchlist() {
-  const { data: stocksData, isLoading, isError } = useQuery(
-    ["historicalStockData"],
-    fetchHistoricalData,
-    {
-      staleTime: 60 * 60 * 1000,
-      cacheTime: 24 * 60 * 60 * 1000,
-      retry: 3,
-    }
-  );
+  const { data: stocksData, isLoading, isError } = useQuery({
+    queryKey: ["historicalStockData"],
+    queryFn: fetchHistoricalData,
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 3,
+  });
 
   const gainers =
     stocksData?.filter((s) => s.latestChangePercent > 0).length || 0;

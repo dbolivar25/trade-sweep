@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
   TrendingDown,
@@ -54,28 +54,26 @@ export default function TradesPage() {
 
   const queryClient = useQueryClient();
 
-  const { data: trades, isLoading, refetch } = useQuery(
-    ["recentTrades"],
-    fetchTrades,
-    { staleTime: 5 * 60 * 1000 }
-  );
+  const { data: trades, isLoading, refetch } = useQuery({
+    queryKey: ["recentTrades"],
+    queryFn: fetchTrades,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const deleteTradeMutation = useMutation(
-    (tradeId: string) =>
+  const deleteTradeMutation = useMutation({
+    mutationFn: (tradeId: string) =>
       fetch(`/api/trades/${tradeId}`, { method: "DELETE" }).then((res) => {
         if (!res.ok) throw new Error("Failed to delete trade");
         return res.json();
       }),
-    {
-      onSuccess: () => {
-        toast.success("Trade deleted successfully");
-        queryClient.invalidateQueries(["recentTrades"]);
-      },
-      onError: () => {
-        toast.error("Failed to delete trade");
-      },
-    }
-  );
+    onSuccess: () => {
+      toast.success("Trade deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["recentTrades"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete trade");
+    },
+  });
 
   const handleDeleteClick = (tradeId: string) => {
     if (deleteConfirmId === tradeId) {

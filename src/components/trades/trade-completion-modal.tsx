@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Trade } from "@/lib/types";
 import {
   validateTradePrice,
@@ -40,18 +40,18 @@ export default function TradeCompletionModal({
   const [calculatedPnL, setCalculatedPnL] = useState<number | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
 
-  const { data: trade } = useQuery<Trade>(
-    ["trade", tradeId],
-    async () => {
+  const { data: trade } = useQuery<Trade>({
+    queryKey: ["trade", tradeId],
+    queryFn: async () => {
       const response = await fetch(`/api/trades/${tradeId}`);
       if (!response.ok) throw new Error("Failed to fetch trade");
       return response.json();
     },
-    { enabled: isOpen && !!tradeId }
-  );
+    enabled: isOpen && !!tradeId,
+  });
 
-  const completeTradeMutation = useMutation(
-    async (exit_price: number) => {
+  const completeTradeMutation = useMutation({
+    mutationFn: async (exit_price: number) => {
       const response = await fetch(`/api/trades/${tradeId}/complete`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -60,18 +60,16 @@ export default function TradeCompletionModal({
       if (!response.ok) throw new Error("Failed to complete trade");
       return response.json();
     },
-    {
-      onSuccess: () => {
-        toast.success("Trade completed successfully!");
-        onComplete();
-        setExitPrice("");
-        setCalculatedPnL(null);
-      },
-      onError: () => {
-        toast.error("Failed to complete trade");
-      },
-    }
-  );
+    onSuccess: () => {
+      toast.success("Trade completed successfully!");
+      onComplete();
+      setExitPrice("");
+      setCalculatedPnL(null);
+    },
+    onError: () => {
+      toast.error("Failed to complete trade");
+    },
+  });
 
   useEffect(() => {
     if (trade && exitPrice) {
@@ -238,7 +236,7 @@ export default function TradeCompletionModal({
             <Button
               type="submit"
               disabled={
-                !exitPrice || !!priceError || completeTradeMutation.isLoading
+                !exitPrice || !!priceError || completeTradeMutation.isPending
               }
               className={cn(
                 "flex-1",
@@ -248,7 +246,7 @@ export default function TradeCompletionModal({
                 "text-white"
               )}
             >
-              {completeTradeMutation.isLoading ? (
+              {completeTradeMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Completing...

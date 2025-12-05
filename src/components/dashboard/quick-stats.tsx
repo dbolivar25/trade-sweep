@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Trade } from "@/lib/types";
 import { TrendingUp, TrendingDown, Activity, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,9 @@ const fetchTrades = async (): Promise<Trade[]> => {
 };
 
 export function QuickStats({ isSignedIn }: QuickStatsProps) {
-  const { data: trades, isLoading } = useQuery(["recentTrades"], fetchTrades, {
+  const { data: trades, isLoading } = useQuery({
+    queryKey: ["recentTrades"],
+    queryFn: fetchTrades,
     enabled: isSignedIn,
     staleTime: 5 * 60 * 1000,
   });
