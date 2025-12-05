@@ -1,6 +1,7 @@
-import RecentTradesCard from "@/components/dashboard/recent-trades-card";
-import WatchlistCard from "@/components/dashboard/watchlist-card";
-import WelcomeCard from "@/components/dashboard/welcome-card";
+import { HeroSection } from "@/components/dashboard/hero-section";
+import { QuickStats } from "@/components/dashboard/quick-stats";
+import { WatchlistPreview } from "@/components/dashboard/watchlist-preview";
+import { RecentTradesSection } from "@/components/dashboard/recent-trades-section";
 import { currentUser } from "@clerk/nextjs/server";
 
 export default async function Home() {
@@ -8,16 +9,17 @@ export default async function Home() {
   const isSignedIn = !!user;
 
   return (
-    <div className="w-full px-4 pb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-screen-2xl mx-auto">
-        {/* Left Column - Welcome Card and Watchlist */}
-        <div className="space-y-6 w-full">
-          <WelcomeCard userFirstName={user?.firstName} />
-          <WatchlistCard isSignedIn={isSignedIn} userId={user?.id} />
+    <div className="max-w-7xl mx-auto space-y-12">
+      <HeroSection userFirstName={user?.firstName} />
+
+      <QuickStats isSignedIn={isSignedIn} />
+
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <div className="xl:col-span-2">
+          <WatchlistPreview isSignedIn={isSignedIn} userId={user?.id} />
         </div>
-        {/* Right Column - Recent Trades */}
-        <div className="w-full">
-          <RecentTradesCard isSignedIn={isSignedIn} />
+        <div className="xl:col-span-3">
+          <RecentTradesSection isSignedIn={isSignedIn} />
         </div>
       </div>
     </div>

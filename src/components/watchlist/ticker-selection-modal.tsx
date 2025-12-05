@@ -10,8 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { WatchlistItem } from "@/lib/types";
+import { TrendingUp, TrendingDown, Check, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
 
-// Simple type for tracking ticker visibility state
 type TickerVisibility = {
   [id: string]: boolean;
 };
@@ -33,56 +36,115 @@ export default function TickerSelectionModal({
   onToggleTicker,
   onApply,
 }: TickerSelectionModalProps) {
-  // Handler for when the user applies their changes
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredTickers = useMemo(() => {
+    if (!searchQuery) return tickers;
+    return tickers.filter((t) =>
+      t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [tickers, searchQuery]);
+
+  const selectedCount = Object.values(visibilityState).filter(Boolean).length;
+
   function handleApply() {
     onApply();
     onOpenChange(false);
+    setSearchQuery("");
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Edit Watchlist</DialogTitle>
+      <DialogContent className="sm:max-w-[640px] p-0 gap-0 flex flex-col max-h-[85vh]">
+        <DialogHeader className="p-6 pb-4">
+          <DialogTitle className="text-2xl">Edit Watchlist</DialogTitle>
           <DialogDescription>
-            Select the tickers you want to display in your watchlist
+            Select which symbols to display on your dashboard
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {tickers.map((item) => (
-              <div
-                key={item.symbol}
-                className={`p-3 border rounded-lg transition-all cursor-pointer ${
-                  visibilityState[item.symbol]
-                    ? "border-stone-300 dark:border-stone-700"
-                    : "border-stone-200 dark:border-stone-800 opacity-60 dark:opacity-80"
-                }`}
-                onClick={() => onToggleTicker(item.symbol)}
-              >
-                <div className="font-medium">{item.symbol}</div>
-                <div className="text-sm">${item.price}</div>
-                <div
-                  className={`text-xs ${
-                    item.change.startsWith("+")
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {item.change}
-                </div>
-              </div>
-            ))}
+        <div className="px-6 pb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search symbols..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-11"
+            />
           </div>
         </div>
 
-        <DialogFooter className="mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleApply}>Apply</Button>
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-4">
+            {filteredTickers.map((item) => {
+              const isSelected = visibilityState[item.symbol];
+              const changeValue = parseFloat(item.change.replace(/[+%]/g, ""));
+              const isPositive = changeValue > 0;
+
+              return (
+                <button
+                  key={item.symbol}
+                  onClick={() => onToggleTicker(item.symbol)}
+                  className={cn(
+                    "relative p-4 rounded-xl border-2 text-left transition-all",
+                    isSelected
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/50 hover:bg-muted/30"
+                  )}
+                >
+                  {isSelected && (
+                    <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-accent flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </div>
+                  )}
+
+                  <div className="font-semibold text-lg">{item.symbol}</div>
+                  <div className="font-mono text-muted-foreground">
+                    ${item.price.toFixed(2)}
+                  </div>
+                  <div
+                    className={cn(
+                      "flex items-center gap-1 text-sm font-medium mt-1",
+                      isPositive ? "text-gain" : "text-loss"
+                    )}
+                  >
+                    {isPositive ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3" />
+                    )}
+                    {item.change}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {filteredTickers.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No symbols matching &quot;{searchQuery}&quot;
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="p-6 pt-4 border-t border-border">
+          <div className="flex items-center justify-between w-full gap-4">
+            <span className="text-sm text-muted-foreground">
+              {selectedCount} symbol{selectedCount !== 1 && "s"} selected
+            </span>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApply}
+                className="bg-accent hover:bg-accent/90 text-white"
+              >
+                Apply Changes
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

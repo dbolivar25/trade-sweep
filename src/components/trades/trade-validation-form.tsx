@@ -18,10 +18,13 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "react-query";
 import { WatchlistItem } from "@/lib/types";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TradeValidationFormProps {
   tradeType: TradeType;
@@ -49,7 +52,6 @@ export default function TradeValidationForm({
     },
   });
 
-  // Fetch available symbols from watchlist
   const { data: watchlistData } = useQuery<WatchlistItem[]>(
     "watchlistSymbols",
     async () => {
@@ -57,12 +59,9 @@ export default function TradeValidationForm({
       if (!response.ok) throw new Error("Failed to fetch symbols");
       return response.json();
     },
-    {
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    }
+    { staleTime: 5 * 60 * 1000 }
   );
 
-  // Update valid symbols when watchlist data changes
   useEffect(() => {
     if (watchlistData) {
       const symbols = new Set(watchlistData.map((item) => item.symbol));
@@ -70,19 +69,17 @@ export default function TradeValidationForm({
     }
   }, [watchlistData]);
 
-  // Validate symbol on change
   const handleSymbolChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase();
     setSymbol(value);
-    
+
     if (value && validSymbols.size > 0 && !validSymbols.has(value)) {
-      setSymbolError(`Symbol "${value}" is not available for trading`);
+      setSymbolError(`Symbol "${value}" is not in your watchlist`);
     } else {
       setSymbolError(null);
     }
   };
 
-  // Create trade mutation
   const createTradeMutation = useMutation(
     async (tradeData: {
       symbol: string;
@@ -104,55 +101,32 @@ export default function TradeValidationForm({
     },
     {
       onSuccess: () => {
-        toast("Trade created successfully!", {
-          duration: 5000,
-          position: "top-center",
-        });
+        toast.success("Trade created successfully!");
         onComplete();
       },
       onError: () => {
-        toast("Failed to create trade", {
-          duration: 5000,
-          position: "top-center",
-        });
+        toast.error("Failed to create trade");
       },
     }
   );
 
-  // Handle form submission
   async function onSubmit(data: TradeValidationFormSchema) {
     const trimmedSymbol = symbol.trim().toUpperCase();
-    
+
     if (!trimmedSymbol) {
-      toast("Please enter a symbol", {
-        duration: 5000,
-        position: "top-center",
-      });
+      toast.error("Please enter a symbol");
       return;
     }
 
-    // Validate symbol against available stocks
     if (validSymbols.size > 0 && !validSymbols.has(trimmedSymbol)) {
-      toast(`Symbol "${trimmedSymbol}" is not available for trading`, {
-        duration: 5000,
-        position: "top-center",
-      });
+      toast.error(`Symbol "${trimmedSymbol}" is not in your watchlist`);
       return;
     }
 
     const result = validateTrade(tradeType, data, currentTime);
 
-    toast(
-      `${result.isValid ? "Trade Validated" : "Validation Failed"}: ${result.message}`,
-      {
-        duration: 5000,
-        position: "top-center",
-        closeButton: true,
-      },
-    );
-
     if (result.isValid) {
-      // Create the trade in the database
+      toast.success("Trade validated successfully");
       createTradeMutation.mutate({
         symbol: trimmedSymbol,
         type: tradeType,
@@ -163,8 +137,12 @@ export default function TradeValidationForm({
         buy_side_liquidity: data.buySideLiquidity || null,
         sell_side_liquidity: data.sellSideLiquidity || null,
       });
+    } else {
+      toast.error(result.message);
     }
   }
+
+  const isLong = tradeType === "long";
 
   return (
     <Form {...form}>
@@ -179,83 +157,98 @@ export default function TradeValidationForm({
             value={symbol}
             onChange={handleSymbolChange}
             placeholder="AAPL"
-            className={`uppercase ${symbolError ? "border-red-500" : ""}`}
+            className={cn(
+              "uppercase h-11 font-mono",
+              symbolError && "border-destructive focus:ring-destructive"
+            )}
             required
             maxLength={10}
           />
           {symbolError && (
-            <p className="text-sm text-red-500 mt-1">{symbolError}</p>
+            <p className="text-sm text-destructive">{symbolError}</p>
           )}
         </div>
-        {tradeType === "long" ? (
-          <FormField
-            control={form.control}
-            name="buySideLiquidity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Buy Side Liquidity</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        ) : (
-          <FormField
-            control={form.control}
-            name="sellSideLiquidity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sell Side Liquidity</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        )}
 
         <FormField
           control={form.control}
-          name="fvgHigh"
+          name={isLong ? "buySideLiquidity" : "sellSideLiquidity"}
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {tradeType === "long" ? "Bearish" : "Bullish"} FVG High
+                {isLong ? "Buy Side Liquidity" : "Sell Side Liquidity"}
               </FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" {...field} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-11 font-mono"
+                  {...field}
+                />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="fvgLow"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {tradeType === "long" ? "Bearish" : "Bullish"} FVG Low
-              </FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" {...field} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="fvgHigh"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{isLong ? "Bearish" : "Bullish"} FVG High</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="h-11 font-mono"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="fvgLow"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{isLong ? "Bearish" : "Bullish"} FVG Low</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="h-11 font-mono"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
           name="recentLimit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {tradeType === "long" ? "Recent High" : "Recent Low"}
-              </FormLabel>
+              <FormLabel>{isLong ? "Recent High" : "Recent Low"}</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" {...field} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-11 font-mono"
+                  {...field}
+                />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -265,20 +258,39 @@ export default function TradeValidationForm({
           name="currentPrice"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Current Close Price</FormLabel>
+              <FormLabel>Entry Price</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" {...field} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-11 font-mono"
+                  {...field}
+                />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={createTradeMutation.isLoading}
+        <Button
+          type="submit"
+          className={cn(
+            "w-full h-12 font-medium",
+            isLong
+              ? "bg-gain hover:bg-gain/90 text-white"
+              : "bg-loss hover:bg-loss/90 text-white"
+          )}
+          disabled={createTradeMutation.isLoading || !!symbolError}
         >
-          {createTradeMutation.isLoading ? "Creating Trade..." : "Validate Entry"}
+          {createTradeMutation.isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Creating Trade...
+            </>
+          ) : (
+            `Validate ${isLong ? "Long" : "Short"} Entry`
+          )}
         </Button>
       </form>
     </Form>

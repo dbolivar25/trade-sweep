@@ -14,8 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "react-query";
 import { Trade } from "@/lib/types";
-import { validateTradePrice, calculateSafeProfit, TRADE_LIMITS } from "@/lib/constants/trade-limits";
+import {
+  validateTradePrice,
+  calculateSafeProfit,
+  TRADE_LIMITS,
+} from "@/lib/constants/trade-limits";
 import { toast } from "sonner";
+import { TrendingUp, TrendingDown, Loader2, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TradeCompletionModalProps {
   isOpen: boolean;
@@ -34,7 +40,6 @@ export default function TradeCompletionModal({
   const [calculatedPnL, setCalculatedPnL] = useState<number | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
 
-  // Fetch trade details
   const { data: trade } = useQuery<Trade>(
     ["trade", tradeId],
     async () => {
@@ -42,12 +47,9 @@ export default function TradeCompletionModal({
       if (!response.ok) throw new Error("Failed to fetch trade");
       return response.json();
     },
-    {
-      enabled: isOpen && !!tradeId,
-    }
+    { enabled: isOpen && !!tradeId }
   );
 
-  // Complete trade mutation
   const completeTradeMutation = useMutation(
     async (exit_price: number) => {
       const response = await fetch(`/api/trades/${tradeId}/complete`, {
@@ -60,26 +62,28 @@ export default function TradeCompletionModal({
     },
     {
       onSuccess: () => {
+        toast.success("Trade completed successfully!");
         onComplete();
         setExitPrice("");
         setCalculatedPnL(null);
       },
+      onError: () => {
+        toast.error("Failed to complete trade");
+      },
     }
   );
 
-  // Calculate P&L in real-time as user types
   useEffect(() => {
     if (trade && exitPrice) {
       const exit = parseFloat(exitPrice);
       if (!isNaN(exit)) {
-        // Validate the exit price
         const validation = validateTradePrice(exit);
         if (!validation.isValid) {
           setPriceError(validation.error || "Invalid price");
           setCalculatedPnL(null);
           return;
         }
-        
+
         setPriceError(null);
         const pnl = calculateSafeProfit(
           trade.type,
@@ -87,7 +91,6 @@ export default function TradeCompletionModal({
           exit,
           trade.quantity || 1
         );
-        
         setCalculatedPnL(pnl);
       } else {
         setCalculatedPnL(null);
@@ -102,100 +105,157 @@ export default function TradeCompletionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const exit = parseFloat(exitPrice);
-    
+
     if (isNaN(exit)) {
-      toast("Please enter a valid price", {
-        duration: 3000,
-        position: "top-center",
-      });
+      toast.error("Please enter a valid price");
       return;
     }
-    
+
     const validation = validateTradePrice(exit);
     if (!validation.isValid) {
-      toast(validation.error || "Invalid price", {
-        duration: 3000,
-        position: "top-center",
-      });
+      toast.error(validation.error || "Invalid price");
       return;
     }
-    
+
     completeTradeMutation.mutate(exit);
   };
 
   if (!trade) return null;
 
+  const isLong = trade.type === "long";
+  const isProfitable = calculatedPnL !== null && calculatedPnL >= 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Complete Trade</DialogTitle>
+      <DialogContent className="sm:max-w-[440px] p-0 gap-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-4">
+          <DialogTitle className="text-2xl">Complete Trade</DialogTitle>
           <DialogDescription>
-            Enter the exit price to complete this {trade.type} trade for {trade.symbol}
+            Enter the exit price to close your position
           </DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Type</Label>
-              <div className="col-span-3 capitalize">
-                <span className={trade.type === "long" ? "text-green-600" : "text-red-600"}>
-                  {trade.type}
-                </span>
+          <div className="px-6 space-y-6">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "h-10 w-10 rounded-full flex items-center justify-center",
+                    isLong ? "bg-gain/10" : "bg-loss/10"
+                  )}
+                >
+                  {isLong ? (
+                    <TrendingUp className="h-5 w-5 text-gain" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-loss" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold">{trade.symbol}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-medium capitalize",
+                      isLong ? "text-gain" : "text-loss"
+                    )}
+                  >
+                    {trade.type}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Entry</p>
+                <p className="font-mono font-semibold">
+                  ${trade.entry_price.toFixed(2)}
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Entry</Label>
-              <div className="col-span-3">${trade.entry_price.toFixed(2)}</div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="exit_price" className="text-right">
+
+            <div className="space-y-2">
+              <Label htmlFor="exit_price" className="text-sm font-medium">
                 Exit Price
               </Label>
-              <div className="col-span-3">
-                <Input
-                  id="exit_price"
-                  type="number"
-                  step="0.01"
-                  value={exitPrice}
-                  onChange={(e) => setExitPrice(e.target.value)}
-                  className={priceError ? "border-red-500" : ""}
-                  placeholder="0.00"
-                  max={TRADE_LIMITS.MAX_PRICE}
-                  min={TRADE_LIMITS.MIN_PRICE}
-                  required
-                />
-                {priceError && (
-                  <p className="text-sm text-red-500 mt-1">{priceError}</p>
+              <Input
+                id="exit_price"
+                type="number"
+                step="0.01"
+                value={exitPrice}
+                onChange={(e) => setExitPrice(e.target.value)}
+                className={cn(
+                  "h-12 font-mono text-lg",
+                  priceError && "border-destructive focus:ring-destructive"
                 )}
-              </div>
+                placeholder="0.00"
+                max={TRADE_LIMITS.MAX_PRICE}
+                min={TRADE_LIMITS.MIN_PRICE}
+                required
+                autoFocus
+              />
+              {priceError && (
+                <p className="text-sm text-destructive">{priceError}</p>
+              )}
             </div>
+
             {calculatedPnL !== null && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">P&L</Label>
-                <div
-                  className={`col-span-3 font-medium ${
-                    calculatedPnL >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {calculatedPnL >= 0 ? "+" : ""}${calculatedPnL.toFixed(2)}
+              <div
+                className={cn(
+                  "p-4 rounded-xl border-2 transition-colors",
+                  isProfitable
+                    ? "bg-gain/5 border-gain/20"
+                    : "bg-loss/5 border-loss/20"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="font-mono">
+                      ${trade.entry_price.toFixed(2)}
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                    <span className="font-mono">${exitPrice}</span>
+                  </div>
+                  <div
+                    className={cn(
+                      "text-2xl font-semibold font-mono",
+                      isProfitable ? "text-gain" : "text-loss"
+                    )}
+                  >
+                    {isProfitable ? "+" : ""}${calculatedPnL.toFixed(2)}
+                  </div>
                 </div>
               </div>
             )}
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="p-6 pt-4 gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="flex-1"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={!exitPrice || !!priceError || completeTradeMutation.isLoading}
+              disabled={
+                !exitPrice || !!priceError || completeTradeMutation.isLoading
+              }
+              className={cn(
+                "flex-1",
+                isProfitable
+                  ? "bg-gain hover:bg-gain/90"
+                  : "bg-accent hover:bg-accent/90",
+                "text-white"
+              )}
             >
-              {completeTradeMutation.isLoading ? "Completing..." : "Complete Trade"}
+              {completeTradeMutation.isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                "Complete Trade"
+              )}
             </Button>
           </DialogFooter>
         </form>
