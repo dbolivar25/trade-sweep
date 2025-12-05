@@ -137,7 +137,7 @@ export default function TradesPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <header className="mb-12 animate-in">
+      <header className="mb-6 md:mb-12 animate-in">
         <div className="flex items-center gap-3 text-muted-foreground mb-4">
           <TrendingUp className="h-5 w-5" />
           <span className="text-sm font-medium uppercase tracking-wider">
@@ -145,12 +145,12 @@ export default function TradesPage() {
           </span>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-6">
           <div>
-            <h1 className="text-5xl md:text-6xl font-medium tracking-tight mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-2 md:mb-4">
               Trades
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl">
+            <p className="text-base md:text-lg text-muted-foreground max-w-xl">
               View and manage your complete trading history with detailed
               analytics.
             </p>
@@ -159,7 +159,7 @@ export default function TradesPage() {
           <Button
             onClick={() => setIsModalOpen(true)}
             size="lg"
-            className="bg-accent hover:bg-accent/90 text-white shrink-0"
+            className="bg-accent hover:bg-accent/90 text-white w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             New Trade
@@ -167,28 +167,28 @@ export default function TradesPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-in delay-100">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Total Trades</p>
-          <p className="text-3xl font-semibold font-mono">{stats.total}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8 animate-in delay-100">
+        <div className="rounded-xl md:rounded-2xl border border-border bg-card p-3 md:p-5">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Total Trades</p>
+          <p className="text-2xl md:text-3xl font-semibold font-mono">{stats.total}</p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Pending</p>
-          <p className="text-3xl font-semibold font-mono text-pending">
+        <div className="rounded-xl md:rounded-2xl border border-border bg-card p-3 md:p-5">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Pending</p>
+          <p className="text-2xl md:text-3xl font-semibold font-mono text-pending">
             {stats.pending}
           </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Completed</p>
-          <p className="text-3xl font-semibold font-mono text-gain">
+        <div className="rounded-xl md:rounded-2xl border border-border bg-card p-3 md:p-5">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Completed</p>
+          <p className="text-2xl md:text-3xl font-semibold font-mono text-gain">
             {stats.completed}
           </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Total P&L</p>
+        <div className="rounded-xl md:rounded-2xl border border-border bg-card p-3 md:p-5">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Total P&L</p>
           <p
             className={cn(
-              "text-3xl font-semibold font-mono",
+              "text-2xl md:text-3xl font-semibold font-mono",
               stats.totalPnL >= 0 ? "text-gain" : "text-loss"
             )}
           >

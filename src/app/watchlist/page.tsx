@@ -32,8 +32,8 @@ const fetchHistoricalData = async (): Promise<HistoricalStockData[]> => {
   return response.json();
 };
 
-const ROW_HEIGHT = 380;
-const ROW_GAP = 24;
+const ROW_HEIGHT = 320;
+const ROW_GAP = 16;
 
 export default function Watchlist() {
   const listRef = useRef<HTMLDivElement>(null);
@@ -75,56 +75,56 @@ export default function Watchlist() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <header className="mb-12 animate-in">
-        <div className="flex items-center gap-3 text-muted-foreground mb-4">
+      <header className="mb-6 md:mb-12 animate-in">
+        <div className="flex items-center gap-3 text-muted-foreground mb-3 md:mb-4">
           <LineChart className="h-5 w-5" />
           <span className="text-sm font-medium uppercase tracking-wider">
             Market Overview
           </span>
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-medium tracking-tight mb-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-2 md:mb-4">
           Watchlist
         </h1>
 
-        <p className="text-lg text-muted-foreground max-w-xl mb-8">
+        <p className="text-base md:text-lg text-muted-foreground max-w-xl mb-4 md:mb-8">
           Track performance across all your monitored symbols with 90-day
           historical data.
         </p>
 
         {!isLoading && !isError && stocksData && (
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 md:gap-6">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gain/10">
                 <TrendingUp className="h-4 w-4 text-gain" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Gainers</p>
-                <p className="text-xl font-semibold font-mono text-gain">
+                <p className="text-xs md:text-sm text-muted-foreground">Gainers</p>
+                <p className="text-lg md:text-xl font-semibold font-mono text-gain">
                   {gainers}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-12 bg-border" />
+            <div className="w-px h-10 md:h-12 bg-border hidden sm:block" />
 
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-loss/10">
                 <TrendingDown className="h-4 w-4 text-loss" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Losers</p>
-                <p className="text-xl font-semibold font-mono text-loss">
+                <p className="text-xs md:text-sm text-muted-foreground">Losers</p>
+                <p className="text-lg md:text-xl font-semibold font-mono text-loss">
                   {losers}
                 </p>
               </div>
             </div>
 
-            <div className="w-px h-12 bg-border" />
+            <div className="w-px h-10 md:h-12 bg-border hidden sm:block" />
 
             <div>
-              <p className="text-sm text-muted-foreground">Total Symbols</p>
-              <p className="text-xl font-semibold font-mono">
+              <p className="text-xs md:text-sm text-muted-foreground">Total Symbols</p>
+              <p className="text-lg md:text-xl font-semibold font-mono">
                 {stocksData.length}
               </p>
             </div>
@@ -133,26 +133,26 @@ export default function Watchlist() {
       </header>
 
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array(9)
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+          {Array(6)
             .fill(0)
             .map((_, index) => (
               <div
                 key={index}
                 className={cn(
-                  "rounded-2xl border border-border bg-card p-6 h-[340px]",
+                  "rounded-xl md:rounded-2xl border border-border bg-card p-4 md:p-6 h-[280px] md:h-[320px]",
                   "animate-in",
                   `delay-${(index % 3) * 100}`
                 )}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="space-y-2">
-                    <div className="h-7 w-20 shimmer rounded" />
-                    <div className="h-5 w-32 shimmer rounded" />
+                    <div className="h-6 md:h-7 w-16 md:w-20 shimmer rounded" />
+                    <div className="h-4 md:h-5 w-24 md:w-32 shimmer rounded" />
                   </div>
-                  <div className="h-6 w-16 shimmer rounded-full" />
+                  <div className="h-5 md:h-6 w-14 md:w-16 shimmer rounded-full" />
                 </div>
-                <div className="h-[220px] w-full shimmer rounded-xl" />
+                <div className="h-[160px] md:h-[200px] w-full shimmer rounded-xl" />
               </div>
             ))}
         </div>
@@ -182,7 +182,7 @@ export default function Watchlist() {
               return (
                 <div
                   key={virtualRow.key}
-                  className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6"
                   style={{
                     height: `${ROW_HEIGHT}px`,
                     transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,

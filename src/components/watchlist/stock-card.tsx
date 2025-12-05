@@ -82,7 +82,7 @@ export function StockCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card",
+        "group relative overflow-hidden rounded-xl md:rounded-2xl border border-border bg-card",
         "transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-accent/30",
         className
       )}
@@ -97,36 +97,36 @@ export function StockCard({
         />
       </div>
 
-      <div className="p-6 pb-4">
+      <div className="p-4 md:p-6 pb-3 md:pb-4">
         <div className="flex items-start justify-between mb-1">
           <div>
-            <h3 className="text-2xl font-semibold tracking-tight">{symbol}</h3>
-            <p className="text-sm text-muted-foreground">{dateRange}</p>
+            <h3 className="text-xl md:text-2xl font-semibold tracking-tight">{symbol}</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">{dateRange}</p>
           </div>
 
           <div
             className={cn(
-              "flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium",
+              "flex items-center gap-1 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium",
               isPositive ? "bg-gain/10 text-gain" : "bg-loss/10 text-loss"
             )}
           >
             {isPositive ? (
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
             ) : (
-              <TrendingDown className="h-4 w-4" />
+              <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
             )}
             {isPositive ? "+" : ""}
             {latestChangePercent.toFixed(2)}%
           </div>
         </div>
 
-        <div className="flex items-baseline gap-3 mt-2">
-          <span className="text-4xl font-semibold font-mono tracking-tight">
+        <div className="flex items-baseline gap-2 md:gap-3 mt-2">
+          <span className="text-2xl md:text-4xl font-semibold font-mono tracking-tight">
             ${latestPrice.toFixed(2)}
           </span>
           <span
             className={cn(
-              "text-sm font-mono font-medium",
+              "text-xs md:text-sm font-mono font-medium",
               isPositive ? "text-gain" : "text-loss"
             )}
           >
@@ -136,7 +136,7 @@ export function StockCard({
         </div>
       </div>
 
-      <div ref={chartRef} className="h-[180px] px-2">
+      <div ref={chartRef} className="h-[140px] md:h-[180px] px-2">
         {isChartVisible ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart

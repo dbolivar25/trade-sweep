@@ -42,16 +42,16 @@ export function QuickStats({ isSignedIn }: QuickStatsProps) {
   if (!isSignedIn) {
     return (
       <section className="animate-in delay-100">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="relative overflow-hidden rounded-2xl border border-border bg-card p-6"
+              className="relative overflow-hidden rounded-xl md:rounded-2xl border border-border bg-card p-4 md:p-6"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-transparent" />
               <div className="relative space-y-2">
-                <div className="h-4 w-20 shimmer rounded" />
-                <div className="h-8 w-24 shimmer rounded" />
+                <div className="h-4 w-16 md:w-20 shimmer rounded" />
+                <div className="h-6 md:h-8 w-20 md:w-24 shimmer rounded" />
               </div>
             </div>
           ))}
@@ -66,15 +66,15 @@ export function QuickStats({ isSignedIn }: QuickStatsProps) {
   if (isLoading) {
     return (
       <section className="animate-in delay-100">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="relative overflow-hidden rounded-2xl border border-border bg-card p-6"
+              className="relative overflow-hidden rounded-xl md:rounded-2xl border border-border bg-card p-4 md:p-6"
             >
               <div className="space-y-2">
-                <div className="h-4 w-20 shimmer rounded" />
-                <div className="h-8 w-24 shimmer rounded" />
+                <div className="h-4 w-16 md:w-20 shimmer rounded" />
+                <div className="h-6 md:h-8 w-20 md:w-24 shimmer rounded" />
               </div>
             </div>
           ))}
@@ -117,30 +117,30 @@ export function QuickStats({ isSignedIn }: QuickStatsProps) {
 
   return (
     <section className="animate-in delay-100">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {statCards.map((stat, index) => (
           <div
             key={stat.label}
             className={cn(
-              "relative overflow-hidden rounded-2xl border border-border bg-card p-6",
+              "relative overflow-hidden rounded-xl md:rounded-2xl border border-border bg-card p-4 md:p-6",
               "transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5",
               `animate-in delay-${(index + 1) * 100}`
             )}
           >
             <div
               className={cn(
-                "absolute top-4 right-4 p-2 rounded-xl",
+                "absolute top-3 right-3 md:top-4 md:right-4 p-1.5 md:p-2 rounded-lg md:rounded-xl",
                 stat.bgColor
               )}
             >
-              <stat.icon className={cn("h-5 w-5", stat.color)} />
+              <stat.icon className={cn("h-4 w-4 md:h-5 md:w-5", stat.color)} />
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-xs md:text-sm text-muted-foreground font-medium">
                 {stat.label}
               </p>
-              <p className={cn("text-3xl font-semibold font-mono", stat.color)}>
+              <p className={cn("text-xl md:text-3xl font-semibold font-mono", stat.color)}>
                 {stat.value}
               </p>
             </div>
