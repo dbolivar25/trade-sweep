@@ -54,11 +54,11 @@ export default function RootLayout({
           >
             <ReactQueryProvider>
               <SidebarProvider defaultOpen={true}>
-                <div className="flex min-h-screen w-full">
+                <div className="flex min-h-screen w-full overflow-x-hidden">
                   <AppSidebar />
-                  <main className="flex-1 flex flex-col min-h-screen">
+                  <main className="flex-1 flex flex-col min-h-screen min-w-0">
                     <MobileHeader />
-                    <div className="flex-1 px-4 py-6 md:px-6 md:py-8 lg:px-12">
+                    <div className="flex-1 px-4 py-6 md:px-6 md:py-8 lg:px-12 overflow-x-hidden">
                       {children}
                     </div>
                   </main>

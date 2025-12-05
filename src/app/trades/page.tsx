@@ -136,21 +136,21 @@ export default function TradesPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto overflow-hidden">
       <header className="mb-6 md:mb-12 animate-in">
         <div className="flex items-center gap-3 text-muted-foreground mb-4">
-          <TrendingUp className="h-5 w-5" />
+          <TrendingUp className="h-5 w-5 flex-shrink-0" />
           <span className="text-sm font-medium uppercase tracking-wider">
             Trade History
           </span>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-6">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6">
+          <div className="min-w-0 flex-1">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight mb-2 md:mb-4">
               Trades
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-xl">
+            <p className="text-base md:text-lg text-muted-foreground">
               View and manage your complete trading history with detailed
               analytics.
             </p>
@@ -159,7 +159,7 @@ export default function TradesPage() {
           <Button
             onClick={() => setIsModalOpen(true)}
             size="lg"
-            className="bg-accent hover:bg-accent/90 text-white w-full sm:w-auto"
+            className="bg-accent hover:bg-accent/90 text-white w-full sm:w-auto flex-shrink-0"
           >
             <Plus className="h-5 w-5 mr-2" />
             New Trade
@@ -167,30 +167,31 @@ export default function TradesPage() {
         </div>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 md:mb-6 lg:grid lg:grid-cols-4 md:gap-4 lg:overflow-visible lg:pb-0 animate-in delay-100 -mx-4 px-4 lg:mx-0 lg:px-0">
-        <div className="rounded-xl border border-border bg-card p-3 md:p-5 min-w-[140px] lg:min-w-0 flex-shrink-0 lg:flex-shrink">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 md:mb-6 animate-in delay-100">
+        <div className="rounded-xl border border-border bg-card p-3 md:p-5">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
-          <p className="text-xl md:text-3xl font-semibold font-mono">{stats.total}</p>
+          <p className="text-lg sm:text-xl md:text-3xl font-semibold font-mono truncate">{stats.total}</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 md:p-5 min-w-[140px] lg:min-w-0 flex-shrink-0 lg:flex-shrink">
+        <div className="rounded-xl border border-border bg-card p-3 md:p-5">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Pending</p>
-          <p className="text-xl md:text-3xl font-semibold font-mono text-pending">
+          <p className="text-lg sm:text-xl md:text-3xl font-semibold font-mono text-pending truncate">
             {stats.pending}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 md:p-5 min-w-[140px] lg:min-w-0 flex-shrink-0 lg:flex-shrink">
+        <div className="rounded-xl border border-border bg-card p-3 md:p-5">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Completed</p>
-          <p className="text-xl md:text-3xl font-semibold font-mono text-gain">
+          <p className="text-lg sm:text-xl md:text-3xl font-semibold font-mono text-gain truncate">
             {stats.completed}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3 md:p-5 min-w-[140px] lg:min-w-0 flex-shrink-0 lg:flex-shrink">
+        <div className="rounded-xl border border-border bg-card p-3 md:p-5 overflow-hidden">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">P&L</p>
           <p
             className={cn(
-              "text-xl md:text-3xl font-semibold font-mono",
+              "text-lg sm:text-xl md:text-3xl font-semibold font-mono truncate",
               stats.totalPnL >= 0 ? "text-gain" : "text-loss"
             )}
+            title={`${stats.totalPnL >= 0 ? "+" : ""}$${stats.totalPnL.toFixed(2)}`}
           >
             {stats.totalPnL >= 0 ? "+" : ""}${stats.totalPnL.toFixed(2)}
           </p>
@@ -208,13 +209,15 @@ export default function TradesPage() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 lg:flex-none">
-                <Filter className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Status: </span>
-                {filterStatus === "all" ? "All" : filterStatus}
+              <Button variant="outline" size="sm" className="w-full justify-center">
+                <Filter className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                <span className="truncate">
+                  <span className="hidden sm:inline">Status: </span>
+                  {filterStatus === "all" ? "All" : filterStatus}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -232,10 +235,12 @@ export default function TradesPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 lg:flex-none">
-                <Filter className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Type: </span>
-                {filterType === "all" ? "All" : filterType}
+              <Button variant="outline" size="sm" className="w-full justify-center">
+                <Filter className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                <span className="truncate">
+                  <span className="hidden sm:inline">Type: </span>
+                  {filterType === "all" ? "All" : filterType}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -276,24 +281,24 @@ export default function TradesPage() {
                 const isPending = trade.status === "pending";
 
                 return (
-                  <div key={trade.id} className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                  <div key={trade.id} className="p-3 sm:p-4">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <div
                           className={cn(
-                            "h-10 w-10 rounded-full flex items-center justify-center",
+                            "h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0",
                             trade.type === "long" ? "bg-gain/10" : "bg-loss/10"
                           )}
                         >
                           {trade.type === "long" ? (
-                            <TrendingUp className="h-5 w-5 text-gain" />
+                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-gain" />
                           ) : (
-                            <TrendingDown className="h-5 w-5 text-loss" />
+                            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-loss" />
                           )}
                         </div>
-                        <div>
-                          <div className="font-semibold">{trade.symbol}</div>
-                          <div className="text-xs text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold truncate">{trade.symbol}</div>
+                          <div className="text-xs text-muted-foreground truncate">
                             {format(new Date(trade.created_at), "MMM d, yyyy")} · {trade.entry_time}
                           </div>
                         </div>
@@ -304,7 +309,7 @@ export default function TradesPage() {
                         }}
                       >
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -342,29 +347,29 @@ export default function TradesPage() {
                       </DropdownMenu>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm">
-                        <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 sm:gap-4 text-sm min-w-0">
+                        <div className="flex-shrink-0">
                           <span className="text-muted-foreground">Entry </span>
                           <span className="font-mono">${trade.entry_price.toFixed(2)}</span>
                         </div>
                         {trade.exit_price && (
-                          <div>
+                          <div className="flex-shrink-0">
                             <span className="text-muted-foreground">Exit </span>
                             <span className="font-mono">${trade.exit_price.toFixed(2)}</span>
                           </div>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex-shrink-0">
                         {isPending ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-pending/10 text-pending">
                             <Clock className="h-3 w-3" />
-                            Pending
+                            <span className="hidden xs:inline">Pending</span>
                           </span>
                         ) : (
                           <div
                             className={cn(
-                              "font-mono font-semibold",
+                              "font-mono font-semibold text-sm sm:text-base",
                               isProfitable ? "text-gain" : "text-loss"
                             )}
                           >

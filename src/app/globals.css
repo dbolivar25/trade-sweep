@@ -45,6 +45,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  /* Custom Breakpoints */
+  --breakpoint-xs: 475px;
+
   /* Custom Colors */
   --color-gain: var(--gain);
   --color-loss: var(--loss);
