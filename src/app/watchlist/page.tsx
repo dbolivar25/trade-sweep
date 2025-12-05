@@ -1,10 +1,30 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useRef, useMemo, useState, useEffect } from "react";
 import { StockCard } from "@/components/watchlist/stock-card";
 import { LineChart, TrendingUp, TrendingDown } from "lucide-react";
 import { HistoricalStockData } from "@/app/api/stocks/historical/route";
 import { cn } from "@/lib/utils";
+
+function useColumnCount() {
+  const [columns, setColumns] = useState(1);
+
+  useEffect(() => {
+    const updateColumns = () => {
+      if (window.innerWidth >= 1280) setColumns(3);
+      else if (window.innerWidth >= 768) setColumns(2);
+      else setColumns(1);
+    };
+
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+    return () => window.removeEventListener("resize", updateColumns);
+  }, []);
+
+  return columns;
+}
 
 const fetchHistoricalData = async (): Promise<HistoricalStockData[]> => {
   const response = await fetch("/api/stocks/historical");
@@ -12,7 +32,13 @@ const fetchHistoricalData = async (): Promise<HistoricalStockData[]> => {
   return response.json();
 };
 
+const ROW_HEIGHT = 380;
+const ROW_GAP = 24;
+
 export default function Watchlist() {
+  const listRef = useRef<HTMLDivElement>(null);
+  const columnCount = useColumnCount();
+
   const { data: stocksData, isLoading, isError } = useQuery({
     queryKey: ["historicalStockData"],
     queryFn: fetchHistoricalData,
@@ -21,10 +47,31 @@ export default function Watchlist() {
     retry: 3,
   });
 
-  const gainers =
-    stocksData?.filter((s) => s.latestChangePercent > 0).length || 0;
-  const losers =
-    stocksData?.filter((s) => s.latestChangePercent < 0).length || 0;
+  const { gainers, losers } = useMemo(() => {
+    if (!stocksData) return { gainers: 0, losers: 0 };
+    let g = 0, l = 0;
+    for (const s of stocksData) {
+      if (s.latestChangePercent > 0) g++;
+      else if (s.latestChangePercent < 0) l++;
+    }
+    return { gainers: g, losers: l };
+  }, [stocksData]);
+
+  const rows = useMemo(() => {
+    if (!stocksData) return [];
+    const result: HistoricalStockData[][] = [];
+    for (let i = 0; i < stocksData.length; i += columnCount) {
+      result.push(stocksData.slice(i, i + columnCount));
+    }
+    return result;
+  }, [stocksData, columnCount]);
+
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => ROW_HEIGHT + ROW_GAP,
+    overscan: 3,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  });
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -125,18 +172,36 @@ export default function Watchlist() {
       )}
 
       {stocksData && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {stocksData.map((stock, index) => (
-            <StockCard
-              key={stock.symbol}
-              symbol={stock.symbol}
-              data={stock.data}
-              latestPrice={stock.latestPrice}
-              latestChange={stock.latestChange}
-              latestChangePercent={stock.latestChangePercent}
-              className={cn("animate-in", `delay-${(index % 6) * 100}`)}
-            />
-          ))}
+        <div ref={listRef}>
+          <div
+            className="relative w-full"
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const rowData = rows[virtualRow.index];
+              return (
+                <div
+                  key={virtualRow.key}
+                  className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  style={{
+                    height: `${ROW_HEIGHT}px`,
+                    transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
+                  }}
+                >
+                  {rowData.map((stock) => (
+                    <StockCard
+                      key={stock.symbol}
+                      symbol={stock.symbol}
+                      data={stock.data}
+                      latestPrice={stock.latestPrice}
+                      latestChange={stock.latestChange}
+                      latestChangePercent={stock.latestChangePercent}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

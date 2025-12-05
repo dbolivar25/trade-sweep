@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
@@ -32,20 +32,43 @@ export function StockCard({
   latestChangePercent,
   className,
 }: StockCardProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [isChartVisible, setIsChartVisible] = useState(false);
+
+  useEffect(() => {
+    const element = chartRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsChartVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "100px", threshold: 0 }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo(() => {
+    if (!isChartVisible) return [];
     return data.map((item) => ({
       date: item.date,
       close: item.close,
     }));
-  }, [data]);
+  }, [data, isChartVisible]);
 
   const { minY, maxY } = useMemo(() => {
+    if (!isChartVisible || data.length === 0) return { minY: 0, maxY: 100 };
     const allPrices = data.map((d) => d.close);
     const min = Math.min(...allPrices);
     const max = Math.max(...allPrices);
     const padding = (max - min) * 0.1;
     return { minY: min - padding, maxY: max + padding };
-  }, [data]);
+  }, [data, isChartVisible]);
 
   const isPositive = latestChangePercent >= 0;
 
@@ -113,44 +136,47 @@ export function StockCard({
         </div>
       </div>
 
-      <div className="h-[180px] px-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={chartData}
-            margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-          >
-            <defs>
-              <linearGradient
-                id={`gradient-${symbol}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor={isPositive ? "#FF6B4A" : "#64748B"}
-                  stopOpacity={0.3}
-                />
-                <stop
-                  offset="100%"
-                  stopColor={isPositive ? "#FF6B4A" : "#64748B"}
-                  stopOpacity={0}
-                />
-              </linearGradient>
-            </defs>
-            <YAxis domain={[minY, maxY]} hide />
-            <Area
-              type="monotone"
-              dataKey="close"
-              stroke={isPositive ? "#FF6B4A" : "#64748B"}
-              strokeWidth={2}
-              fill={`url(#gradient-${symbol})`}
-              animationDuration={1000}
-              animationEasing="ease-out"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div ref={chartRef} className="h-[180px] px-2">
+        {isChartVisible ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={chartData}
+              margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+            >
+              <defs>
+                <linearGradient
+                  id={`gradient-${symbol}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor={isPositive ? "#FF6B4A" : "#64748B"}
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={isPositive ? "#FF6B4A" : "#64748B"}
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
+              <YAxis domain={[minY, maxY]} hide />
+              <Area
+                type="monotone"
+                dataKey="close"
+                stroke={isPositive ? "#FF6B4A" : "#64748B"}
+                strokeWidth={2}
+                fill={`url(#gradient-${symbol})`}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full shimmer rounded-xl" />
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none" />
