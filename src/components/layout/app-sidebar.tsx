@@ -9,6 +9,7 @@ import {
   LineChart,
   Settings,
   Zap,
+  PanelLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -18,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
@@ -51,7 +51,7 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   return (
@@ -60,27 +60,33 @@ export function AppSidebar() {
       collapsible="icon"
       className="border-r border-sidebar-border bg-sidebar"
     >
-      <SidebarHeader className="p-4 pb-6">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
-            <Zap className="w-5 h-5 text-accent" />
+      <SidebarHeader
+        className={cn(
+          "pb-6 pt-4",
+          isCollapsed ? "px-2 items-center" : "px-4"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSidebar}
+            className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 hover:bg-accent/20 transition-colors shrink-0"
+          >
+            <Zap className="w-5 h-5 text-accent group-hover:opacity-0 transition-opacity" />
+            <PanelLeft className="w-5 h-5 text-accent absolute opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="absolute inset-0 rounded-xl bg-accent/5 blur-sm" />
-          </div>
+          </button>
           {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
+            <Link href="/" className="group">
+              <span className="text-lg font-semibold tracking-tight text-sidebar-foreground group-hover:text-accent transition-colors">
                 TradeSweep
               </span>
-              <span className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50">
-                Precision Trading
-              </span>
-            </div>
+            </Link>
           )}
-        </Link>
+        </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3">
-        <SidebarMenu className="space-y-1">
+      <SidebarContent className={cn("px-3", isCollapsed && "px-0 items-center")}>
+        <SidebarMenu className={cn("space-y-1", isCollapsed && "items-center space-y-3")}>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -125,27 +131,34 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center justify-between">
-          <SidebarTrigger className="h-9 w-9 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors" />
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox:
-                      "h-8 w-8 ring-2 ring-sidebar-accent rounded-full",
-                    userButtonPopoverCard: "bg-popover border-border",
-                  },
-                }}
-              />
-            </SignedIn>
-            <SignedOut>
-              <AuthToggle />
-            </SignedOut>
-          </div>
+      <SidebarFooter
+        className={cn(
+          "border-t border-sidebar-border",
+          isCollapsed ? "p-2" : "p-3"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center",
+            isCollapsed
+              ? "flex-col gap-3 justify-center"
+              : "justify-between"
+          )}
+        >
+          <ThemeToggle />
+          <SignedIn>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "h-8 w-8 ring-2 ring-sidebar-accent rounded-full",
+                  userButtonPopoverCard: "bg-popover border-border",
+                },
+              }}
+            />
+          </SignedIn>
+          <SignedOut>
+            <AuthToggle />
+          </SignedOut>
         </div>
       </SidebarFooter>
     </Sidebar>
